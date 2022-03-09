@@ -21,6 +21,14 @@ kotlin {
         browser()
         nodejs()
     }
+    mingwX64()
+    mingwX86()
+    linuxX64()
+    macosX64()
+    macosArm64()
+    ios()
+    tvos()
+    watchos()
     sourceSets {
         val commonMain by getting {
             dependencies {

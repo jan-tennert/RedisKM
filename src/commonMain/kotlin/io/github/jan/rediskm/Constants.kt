@@ -1,7 +1,5 @@
 package io.github.jan.rediskm
 
-import com.soywiz.korio.dynamic.KDynamic.Companion.toByte
-
 object Constants {
 
     const val CHAR_STAR = '*';

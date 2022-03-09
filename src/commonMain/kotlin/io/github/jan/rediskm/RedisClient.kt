@@ -1,36 +1,48 @@
 package io.github.jan.rediskm
 
-import com.soywiz.korio.async.launch
 import com.soywiz.korio.net.AsyncClient
-import com.soywiz.korio.stream.readStringz
-import com.soywiz.korio.stream.writeBytes
-import com.soywiz.korio.stream.writeString
-import com.soywiz.korio.stream.writeStringz
-import kotlinx.coroutines.coroutineScope
 
-class RedisClient(private val host: String, private val port: Int, val username: String? = null, val password: String? = null, val secure: Boolean = false) {
+/**
+ * Creates a new Redis client.
+ *
+ * @param host The hostname of the Redis server.
+ * @param port The port of the Redis server.
+ * @param password The password used to authenticated with the Redis server.
+ * @param username The username used to authenticated with the Redis server. (optional)
+ * @param secure Whether to use SSL or not. (optional, only available for JVM, JS and Windows)
+ */
+class RedisClient(private val host: String, private val port: Int, val username: String? = null, val password: String, val secure: Boolean = false) {
 
-    private lateinit var client: AsyncClient
+    lateinit var rawClient: AsyncClient
+
+    /**
+     * Whether the client is connected to the server
+     */
     val isConnected: Boolean
-        get() = ::client.isInitialized && client.connected
+        get() = ::rawClient.isInitialized && rawClient.connected
 
-    suspend fun connect() {
-        client = AsyncClient.createAndConnect(host, port, secure)
-       // sendCommand(RedisCommand("KEYS *", listOf()))
+    /**
+     * Connects to the redis server
+     *
+     * @param auth Whether it should authenticate with the server after connecting. You can do that later with [authenticate]
+     */
+    suspend fun connect(auth: Boolean = true) {
+        rawClient = AsyncClient.createAndConnect(host, port, secure)
+        if(auth) authenticate()
     }
 
-    suspend fun auth() = if (password != null) {
-        println("hi")
-        val command = RedisCommand(RedisCommandType.AUTH, if(username != null) listOf(username, password) else listOf(password))
-       // println(command.build())
-        sendCommand(command)
-        println(RedisReader.readResponse(client))
-        false
-    } else false
-
-    suspend fun sendCommand(command: RedisCommand) = command.write(client).also {
-        println(RedisReader.readResponse(client))
-
+    /**
+     * Authenticate to the server.
+     *
+     * @throws RedisException if authentication fails.
+     */
+    suspend fun authenticate() {
+        val args = if(username != null) arrayOf(username, password) else arrayOf(password)
+        val params = listOf("AUTH", *args).toTypedArray()
+        sendCommand(*params)
+        rawClient.readResponse()
     }
+
+    suspend fun sendCommand(vararg args: Any) = rawClient.writeCommand(args.toList())
 
 }
