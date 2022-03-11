@@ -1,8 +1,8 @@
-package io.github.jan.rediskm.params.get
+package io.github.jan.rediskm.core.params.put
 
-import io.github.jan.rediskm.params.Params
+import io.github.jan.rediskm.core.params.Params
 
-class GetExParams(override val args: MutableList<Any>) : Params {
+class SetParams(override val args: MutableList<Any>) : Params {
 
     fun ex(seconds: Int) {
         args.addAll(listOf("EX", seconds.toString()))
@@ -20,8 +20,20 @@ class GetExParams(override val args: MutableList<Any>) : Params {
         args.addAll(listOf("PXAT", milliseconds.toString()))
     }
 
-    fun persist() {
-        args.add("PERSIST")
+    fun nx() {
+        args.add("NX")
+    }
+
+    fun xx() {
+        args.add("XX")
+    }
+
+    fun keepTTL() {
+        args.add("KEEPTTL")
+    }
+
+    fun returnOldValue() {
+        args.add("GET")
     }
 
 }

@@ -13,5 +13,8 @@ object Versions {
     const val SERIALIZATION = "1.3.2"
     const val KORLIBS = "2.4.10"
     const val COROUTINES = "1.6.0"
+    const val DOKKA = "1.6.10"
+    const val NEXUS_STAGING = "0.30.0"
+    const val REDISKM = "0.1"
 
 }

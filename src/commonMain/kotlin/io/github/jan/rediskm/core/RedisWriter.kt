@@ -1,8 +1,7 @@
-package io.github.jan.rediskm
+package io.github.jan.rediskm.core
 
 import com.soywiz.korio.net.AsyncClient
 import com.soywiz.korio.stream.writeString
-import com.soywiz.korio.stream.writeStringz
 
 suspend fun AsyncClient.writeCommand(args: List<Any>) {
     writeString(buildString {
@@ -16,5 +15,5 @@ suspend fun AsyncClient.writeCommand(args: List<Any>) {
                 else -> append("$${it.toString().length}\r\n$it\r\n")
             }
         }
-    })
+    }.also { it.replace("\r\n", "\\r\\n").also(::println) })
 }

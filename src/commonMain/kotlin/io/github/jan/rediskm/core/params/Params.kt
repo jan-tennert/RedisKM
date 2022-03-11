@@ -1,4 +1,4 @@
-package io.github.jan.rediskm.params
+package io.github.jan.rediskm.core.params
 
 interface Params {
 

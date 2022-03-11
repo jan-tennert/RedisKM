@@ -1,9 +1,9 @@
-package io.github.jan.rediskm.params.set
+package io.github.jan.rediskm.core.params.put
 
 import com.soywiz.klock.DateTime
 import com.soywiz.klock.TimeSpan
-import io.github.jan.rediskm.RedisClient
-import io.github.jan.rediskm.readResponse
+import io.github.jan.rediskm.core.RedisClient
+import io.github.jan.rediskm.core.entities.RedisValue
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializerOrNull
@@ -16,14 +16,14 @@ import kotlin.reflect.typeOf
  * @param value the value which will be set to [key]
  * @param extraParams Pass in any additional parameters you want to send to the server.
  */
-suspend inline fun <reified T> RedisClient.set(key: String, value: T, extraParams: SetParams.() -> Unit = {}): Any {
+suspend inline fun <reified T> RedisClient.put(key: String, value: T, extraParams: SetParams.() -> Unit = {}): RedisValue<*> {
     val serializedValue = if(serializerOrNull(typeOf<T>()) != null) {
         Json.encodeToString(value)
     } else {
         value.toString()
     }
     sendCommand("SET", *SetParams(mutableListOf(key, serializedValue)).also(extraParams).args.toTypedArray())
-    return rawClient.readResponse()
+    return receive()!!
 }
 
 /**
@@ -34,7 +34,7 @@ suspend inline fun <reified T> RedisClient.set(key: String, value: T, extraParam
  * @param expirationDate the expiration time of the key
  * @param extraParams Pass in any additional parameters you want to send to the server.
  */
-suspend inline fun <reified T> RedisClient.set(key: String, value: T, expirationDate: DateTime, extraParams: SetParams.() -> Unit) = set(key, value) {
+suspend inline fun <reified T> RedisClient.put(key: String, value: T, expirationDate: DateTime, extraParams: SetParams.() -> Unit = {}) = put(key, value) {
     apply(extraParams)
     pxAT(expirationDate.unixMillisLong)
 }
@@ -47,7 +47,7 @@ suspend inline fun <reified T> RedisClient.set(key: String, value: T, expiration
  * @param expirationDuration the expiration duration of the key
  * @param extraParams Pass in any additional parameters you want to send to the server.
  */
-suspend inline fun <reified T> RedisClient.set(key: String, value: T, expirationDuration: TimeSpan, extraParams: SetParams.() -> Unit) = set(key, value) {
+suspend inline fun <reified T> RedisClient.put(key: String, value: T, expirationDuration: TimeSpan, extraParams: SetParams.() -> Unit = {}) = put(key, value) {
     apply(extraParams)
     px(expirationDuration.millisecondsLong)
 }

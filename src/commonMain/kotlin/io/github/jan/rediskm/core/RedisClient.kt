@@ -1,4 +1,4 @@
-package io.github.jan.rediskm
+package io.github.jan.rediskm.core
 
 import com.soywiz.korio.net.AsyncClient
 
@@ -40,9 +40,11 @@ class RedisClient(private val host: String, private val port: Int, val username:
         val args = if(username != null) arrayOf(username, password) else arrayOf(password)
         val params = listOf("AUTH", *args).toTypedArray()
         sendCommand(*params)
-        rawClient.readResponse()
+        receive()
     }
+    
+    suspend fun receive() = rawClient.readResponse()
 
-    suspend fun sendCommand(vararg args: Any) = rawClient.writeCommand(args.toList())
+    suspend fun sendCommand(vararg args: Any) = rawClient.writeCommand(args.map(Any::toString))
 
 }

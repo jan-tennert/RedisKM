@@ -1,17 +1,20 @@
-package io.github.jan.rediskm
+package io.github.jan.rediskm.core
 
 import com.soywiz.korio.net.AsyncClient
 import com.soywiz.korio.stream.readString
-import com.soywiz.korio.stream.readStringz
+import io.github.jan.rediskm.core.entities.RedisIntegerValue
+import io.github.jan.rediskm.core.entities.RedisListValue
+import io.github.jan.rediskm.core.entities.RedisStringValue
+import io.github.jan.rediskm.core.entities.RedisValue
 
-suspend fun AsyncClient.readResponse(): Any = when(val char = read().toChar().also { println(it) }) {
-    Constants.CHAR_PLUS -> readSimpleString()
-    Constants.CHAR_DOLLAR -> readRedisBulkString()
-    Constants.CHAR_COLON -> readNumber()
+suspend fun AsyncClient.readResponse(): RedisValue<*>? = when(val char = read().toChar()) {
+    Constants.CHAR_PLUS -> RedisStringValue(readSimpleString())
+    Constants.CHAR_DOLLAR -> readRedisBulkString()?.let { RedisStringValue(it) }
+    Constants.CHAR_COLON -> RedisIntegerValue(readNumber())
     Constants.CHAR_MINUS -> throw RedisException(readSimpleString())
-    Constants.CHAR_STAR -> readArray() as Any
+    Constants.CHAR_STAR -> RedisListValue(readArray())
     else -> throw IllegalStateException("Unexpected char: $char")
-}.also { println("RESPONSE: $it") }
+}
 
 private suspend fun AsyncClient.readSimpleString() = buildString {
     var value = read().toChar()
@@ -23,7 +26,7 @@ private suspend fun AsyncClient.readSimpleString() = buildString {
     if(value != '\n') throw IllegalStateException("Expected \\n at the end of a simple string")
 }
 
-private suspend fun AsyncClient.readRedisBulkString(): String {
+private suspend fun AsyncClient.readRedisBulkString(): String? {
     val length = buildString {
         var value = read().toChar()
         while(value != '\r') {
@@ -32,13 +35,13 @@ private suspend fun AsyncClient.readRedisBulkString(): String {
         }
     }.toInt()
     if(read().toChar() != '\n') throw IllegalStateException("Expected \\r and \\n after the length of a bulk string")
+    if(length == -1) return null
     val string = readString(length)
     if(read().toChar() != '\r' || read().toChar() != '\n') throw IllegalStateException("Expected \\r and \\n at the end of a bulk string")
     return string
 }
 
-private suspend fun AsyncClient.readArray() : List<Any> {
-    println("hello")
+private suspend fun AsyncClient.readArray() : List<String> {
     val length = buildString {
         var value = read().toChar()
         while(value != '\r') {
@@ -49,7 +52,7 @@ private suspend fun AsyncClient.readArray() : List<Any> {
     if(read().toChar() != '\n') throw IllegalStateException("Expected \\r and \\n after the length of an array")
     return buildList {
         for(i in 1..length) {
-            add(readResponse())
+            add(readResponse().toString())
         }
     }
 }
