@@ -9,6 +9,7 @@ plugins {
 
 group = "io.github.jan-tennert.rediskm"
 version = Versions.REDISKM
+description = "A Kotlin Multiplatform Redis Client"
 
 repositories {
     mavenCentral()
@@ -80,8 +81,8 @@ publishing {
             artifact(javadocJar)
             pom {
                 name.set(this.name)
-                description.set(this.description?.get() ?: "A Kotlin Multiplatform Discord API Wrapper")
-                url.set("https://github.com/jan-tennert/DiscordKM")
+                description.set("A Kotlin Multiplatform Redis Client")
+                url.set("https://github.com/jan-tennert/RedisKM")
                 licenses {
                     license {
                         name.set("GPL-3.0")
@@ -90,11 +91,11 @@ publishing {
                 }
                 issueManagement {
                     system.set("Github")
-                    url.set("https://github.com/jan-tennert/DiscordKM/issues")
+                    url.set("https://github.com/jan-tennert/RedisKM/issues")
                 }
                 scm {
-                    connection.set("https://github.com/jan-tennert/DiscordKM.git")
-                    url.set("https://github.com/jan-tennert/DiscordKM")
+                    connection.set("https://github.com/jan-tennert/RedisKM.git")
+                    url.set("https://github.com/jan-tennert/RedisKM")
                 }
                 developers {
                     developer {
@@ -118,7 +119,6 @@ kotlin {
         browser()
         nodejs()
     }
-    android()
     mingwX64()
     linuxX64()
     macosX64()
