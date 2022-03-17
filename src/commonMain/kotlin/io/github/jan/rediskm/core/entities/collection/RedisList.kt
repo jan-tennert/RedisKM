@@ -2,7 +2,6 @@ package io.github.jan.rediskm.core.entities.collection
 
 import com.soywiz.klock.TimeSpan
 import com.soywiz.klock.seconds
-import com.soywiz.korio.dynamic.KDynamic.Companion.toInt
 import io.github.jan.rediskm.core.RedisClient
 import io.github.jan.rediskm.core.RedisException
 import io.github.jan.rediskm.core.entities.RedisListValue
