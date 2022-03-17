@@ -1,6 +1,9 @@
 package io.github.jan.rediskm.core
 
 import com.soywiz.korio.net.AsyncClient
+import io.github.jan.rediskm.core.entities.RedisValue
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /**
  * Creates a new Redis client.
@@ -14,6 +17,9 @@ import com.soywiz.korio.net.AsyncClient
 class RedisClient(private val host: String, private val port: Int, val username: String? = null, val password: String, val secure: Boolean = false) {
 
     lateinit var rawClient: AsyncClient
+    private val mutex = Mutex()
+    var locked = false
+        internal set
 
     /**
      * Whether the client is connected to the server
@@ -32,6 +38,11 @@ class RedisClient(private val host: String, private val port: Int, val username:
     }
 
     /**
+     * Disconnects from the redis server
+     */
+    suspend fun disconnect() = rawClient.close()
+
+    /**
      * Authenticate to the server.
      *
      * @throws RedisException if authentication fails.
@@ -43,7 +54,17 @@ class RedisClient(private val host: String, private val port: Int, val username:
         receive()
     }
     
-    suspend fun receive() = rawClient.readResponse()
+    suspend fun receive(): RedisValue<*>? {
+        if(locked) {
+            while(locked);
+            return receive()
+        } else {
+            mutex.withLock { locked = true }
+            return rawClient.readResponse().also {
+                mutex.withLock { locked = false }
+            }
+        }
+    }
 
     suspend fun sendCommand(vararg args: Any) = rawClient.writeCommand(args.map(Any::toString))
 

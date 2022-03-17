@@ -7,16 +7,19 @@ Available for:
 
 ![JVM](https://img.shields.io/badge/-jvm-brightgreen)
 - android (not tested)
+- jvm
 
 ![JS](https://img.shields.io/badge/-js-ffd900) 
 - browser
 - nodejs 
 
-![Native](https://img.shields.io/badge/-native-blue) (secure connections are only supported on windows)
+![Native](https://img.shields.io/badge/-native-blue)
 - mingwx64
 - linuxX64
 - macosX64
 - macosArm64
+
+**secure connections are only supported on mingx64, JVM and JS**
 
 # Introduction
 
