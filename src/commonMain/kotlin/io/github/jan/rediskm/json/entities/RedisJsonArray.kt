@@ -1,7 +1,6 @@
 package io.github.jan.rediskm.json.entities
 
 import io.github.jan.rediskm.core.RedisClient
-import io.github.jan.rediskm.core.entities.RedisListValue
 import io.github.jan.rediskm.core.utils.deserialize
 import io.github.jan.rediskm.core.utils.serialize
 import io.github.jan.rediskm.json.params.getJson
@@ -65,7 +64,7 @@ class RedisJsonArray(override val redisClient: RedisClient, override val key: St
      * @return the new size of the array
      */
     suspend fun trim(start: Int, end: Int): Long {
-        redisClient.sendCommand("JSON.ARRTRIM", key, path)
+        redisClient.sendCommand("JSON.ARRTRIM", key, path, start, end)
         return redisClient.receive()?.value as Long
     }
 

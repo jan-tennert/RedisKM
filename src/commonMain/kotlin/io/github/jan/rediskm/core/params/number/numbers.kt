@@ -1,6 +1,5 @@
 package io.github.jan.rediskm.core.params.number
 
-import io.github.jan.rediskm.core.RedisClient
 import io.github.jan.rediskm.core.entities.RedisElement
 
 /**

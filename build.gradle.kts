@@ -80,7 +80,7 @@ publishing {
         withType<MavenPublication> {
             artifact(javadocJar)
             pom {
-                name.set(this.name)
+                name.set("RedisKM")
                 description.set("A Kotlin Multiplatform Redis Client")
                 url.set("https://github.com/jan-tennert/RedisKM")
                 licenses {

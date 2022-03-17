@@ -6,7 +6,6 @@ import io.github.jan.rediskm.json.entities.RedisJsonArray
 import io.github.jan.rediskm.json.entities.RedisJsonBoolean
 import io.github.jan.rediskm.json.entities.RedisJsonNumber
 import io.github.jan.rediskm.json.entities.RedisJsonObject
-import io.github.jan.rediskm.json.entities.RedisJsonPrimitive
 import io.github.jan.rediskm.json.entities.RedisJsonString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
