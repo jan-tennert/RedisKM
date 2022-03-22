@@ -3,6 +3,8 @@
 A Kotlin Multiplatform [Redis](https://redis.io/) Client. \
 Also supports RedisJSON with built-in KotlinX Serialization support.
 
+Version: [![Maven Central](https://img.shields.io/maven-central/v/io.github.jan-tennert.rediskm/RedisKM)](https://search.maven.org/artifact/io.github.jan-tennert.rediskm/RedisKM)
+
 Available for: 
 
 ![JVM](https://img.shields.io/badge/-jvm-brightgreen)
