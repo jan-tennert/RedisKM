@@ -25,10 +25,10 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
       - name: Publish package
-        run: ./gradlew publishLinuxX64PublicationToOssRepository publishJvmPublicationToOssRepository publishJsPublicationToOssRepository
+        run: ./gradlew publishLinuxX64PublicationToOssRepository publishJvmPublicationToOssRepository publishJsPublicationToOssRepository publishKotlinMultiplatformPublicationToOssRepository
 
   publishWindows:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     steps:
       - run: echo "Will start a Maven Central upload with version ${{ github.event.inputs.releaseversion }}"
 
@@ -44,7 +44,7 @@ jobs:
         run: ./gradlew publishMingwx64PublicationToOssRepository
 
   publishMacOS:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     steps:
       - run: echo "Will start a Maven Central upload with version ${{ github.event.inputs.releaseversion }}"
 
