@@ -41,7 +41,7 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
       - name: Publish package
-        run: ./gradlew publishMingwx64PublicationToOssRepository
+        run: ./gradlew publishMingwx64PublicationToOssRepository --debug
 
   publishMacOS:
     runs-on: macos-latest
