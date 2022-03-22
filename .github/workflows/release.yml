@@ -63,7 +63,7 @@ jobs:
     needs: [publishLinuxJVMJS, publishWindows, publishMacOS]
     runs-on: ubuntu-latest
     steps:
-      - run: echo "Will start a Maven Central upload with version ${{ github.event.inputs.releaseversion }}"
+      - run: echo "Closing and releasing package"
 
       - uses: actions/checkout@v2
 
