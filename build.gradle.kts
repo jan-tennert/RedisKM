@@ -38,6 +38,7 @@ signing {
         sign(extension.publications)
     }
 }
+
 publishing {
     repositories {
         maven {
