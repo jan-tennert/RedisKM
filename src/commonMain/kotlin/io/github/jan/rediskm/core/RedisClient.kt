@@ -103,7 +103,6 @@ class RedisClient(private val host: String, private val port: Int, val username:
                 queuedCommands = 0
                 locked = false
             }
-            println(locked)
             return responses
         }
 
