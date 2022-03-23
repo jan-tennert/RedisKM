@@ -22,4 +22,13 @@ class RedisElement(val redisClient: RedisClient, key: String) {
 
     suspend inline fun <reified T> set(value: T, expirationDuration: TimeSpan, extraParams: SetParams.() -> Unit = {}) = redisClient.put(key, value, expirationDuration, extraParams)
 
+    enum class Type {
+        STRING,
+        LIST,
+        SET,
+        ZSET,
+        HASH,
+        STREAM
+    }
+
 }

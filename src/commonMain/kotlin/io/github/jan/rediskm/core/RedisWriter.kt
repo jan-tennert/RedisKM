@@ -15,5 +15,5 @@ suspend fun AsyncClient.writeCommand(args: List<Any>) {
                 else -> append("$${it.toString().length}\r\n$it\r\n")
             }
         }
-    }.also { it.replace("\r\n", "\\r\\n").also(::println) })
+    })
 }

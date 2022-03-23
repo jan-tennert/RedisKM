@@ -2,6 +2,7 @@ package io.github.jan.rediskm.core.params.misc
 
 import com.soywiz.klock.DateTime
 import com.soywiz.klock.TimeSpan
+import com.soywiz.klock.measureTime
 import com.soywiz.klock.milliseconds
 import io.github.jan.rediskm.core.RedisClient
 import io.github.jan.rediskm.core.entities.RedisElement
@@ -46,6 +47,9 @@ suspend fun RedisClient.delete(vararg keys: String) = run {
     receive()!!.value as Long
 }
 
+/**
+ * Deletes this element
+ */
 suspend fun RedisElement.delete() = redisClient.delete(key)
 
 /**
@@ -58,8 +62,11 @@ suspend fun RedisClient.exists(vararg keys: String) = run {
     receive()!!.value as Long
 }
 
-suspend fun RedisElement.exists() = redisClient.exists(key)
+suspend fun RedisElement.exists() = redisClient.exists(key) == 1L
 
+/**
+ * Sets the [RedisElement.key] to expire after [timeout]
+ */
 suspend fun RedisElement.expire(timeout: TimeSpan): Boolean {
     redisClient.sendCommand("PEXPIRE", key, timeout.millisecondsLong)
     return redisClient.receive()!!.value == 1L
@@ -70,38 +77,54 @@ suspend fun RedisElement.expireAt(timestamp: DateTime): Boolean {
     return redisClient.receive()!!.value == 1L
 }
 
-suspend fun RedisElement.moveTo(destination: String): Boolean {
-    redisClient.sendCommand("MOVE", key, destination)
-    return (redisClient.receive()!!.value == 1L).also {
-        if(it) mutex.withLock { key = destination }
-    }
-}
-
+/**
+ * Gets the time until the key will be automatically removed.
+ */
 suspend fun RedisElement.getTTL(key: String): TimeSpan {
     redisClient.sendCommand("TTL", key)
     return (redisClient.receive()!!.value as Long).milliseconds
 }
 
+/**
+ * Gets a random key
+ */
 suspend fun RedisClient.getRandomKey(): String? {
     sendCommand("RANDOMKEY")
     return receive()?.value?.toString()
 }
 
-suspend fun RedisElement.rename(newName: String): Boolean {
-    redisClient.sendCommand("RENAME", key, newName)
+/**
+ * Renames the key [RedisElement.key] to [newKey]
+ */
+suspend fun RedisElement.rename(newKey: String): Boolean {
+    redisClient.sendCommand("RENAME", key, newKey)
     return (redisClient.receive()!!.value == 1L).also {
-        if(it) mutex.withLock { key = newName }
+        if(it) mutex.withLock { key = newKey }
     }
 }
 
-suspend fun RedisElement.renameNX(newName: String): Boolean {
-    redisClient.sendCommand("RENAMENX", key, newName)
+/**
+ * Renames [RedisElement.key] to [newKey] only if [newKey] doesn't exist.
+ */
+suspend fun RedisElement.renameNX(newKey: String): Boolean {
+    redisClient.sendCommand("RENAMENX", key, newKey)
     return (redisClient.receive()!!.value == 1L).also {
-        if(it) mutex.withLock { key = newName }
+        if(it) mutex.withLock { key = newKey }
     }
 }
 
-suspend fun RedisElement.getType(): String {
+suspend fun RedisElement.getType(): RedisElement.Type {
     redisClient.sendCommand("TYPE", key)
-    return redisClient.receive()!!.value.toString()
+    return RedisElement.Type.valueOf(redisClient.receive()!!.value.toString().uppercase())
+}
+
+/**
+ * Pings the redis server
+ * @return The amount it took to get a response form the server
+ */
+suspend fun RedisClient.ping() : TimeSpan {
+    sendCommand("PING")
+    return measureTime {
+        receive()
+    }
 }
