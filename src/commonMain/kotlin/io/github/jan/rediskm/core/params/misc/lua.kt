@@ -14,16 +14,26 @@ val RedisClient.lua: LuaModule
         }
     }
 
+/**
+ * Loads a Lua script into the redis cache
+ * @return The SHA1 digest of the script which can be used on [executeLoadedScript]
+ */
 suspend fun LuaModule.loadScript(script: String): String {
     client.sendCommand("SCRIPT", "LOAD", script)
     return client.receive()?.value.toString()
 }
 
+/**
+ * Executes a Lua script which has been loaded into the redis cache
+ */
 suspend fun LuaModule.executeLoadedScript(sha1: String, vararg args: String): String {
     client.sendCommand("EVALSHA", sha1, *args)
     return client.receive()?.value.toString()
 }
 
+/**
+ * Executes a Lua script which has been loaded into the redis cache
+ */
 suspend fun LuaModule.executeLoadedScript(sha1: String, map: Map<String, String>) = executeLoadedScript(sha1, map.size.toString(), *map.flatMap { listOf(it.key, it.value) }.toTypedArray())
 
 private suspend fun LuaModule.clearScriptCache(type: String) {
@@ -39,9 +49,15 @@ suspend fun LuaModule.killRunningScript() {
     client.receive()
 }
 
+/**
+ * Evaluates a lua script and returns the result
+ */
 suspend fun LuaModule.eval(script: String, vararg args: String): String {
     client.sendCommand("EVAL", script, *args)
     return client.receive()?.value.toString()
 }
 
+/**
+ * Evaluates a lua script and returns the result
+ */
 suspend fun LuaModule.eval(script: String, map: Map<String, String>) = eval(script, map.size.toString(), *map.flatMap { listOf(it.key, it.value) }.toTypedArray())
