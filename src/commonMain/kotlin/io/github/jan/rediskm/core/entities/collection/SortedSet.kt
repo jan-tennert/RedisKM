@@ -20,7 +20,7 @@ class RedisSortedSet internal constructor(val redisClient: RedisClient, val key:
         return redisClient.receive()!!.value.fastCastTo()
     }
 
-    suspend fun add(items: Map<Long, String>): Long {
+    suspend fun add(items: Map<Double, String>): Long {
         redisClient.sendCommand("ZADD", key, *items.flatMap { listOf(it.key, it.value) }.toTypedArray())
         return redisClient.receive()!!.value.fastCastTo()
     }
@@ -123,7 +123,7 @@ suspend inline fun <reified T> RedisClient.getSortedSet(key: String) : Set<T> {
     }
 }
 
-suspend inline fun RedisClient.putSortedSet(key: String, items: Map<Long, String>) {
+suspend inline fun RedisClient.putSortedSet(key: String, items: Map<Double, String>) {
     val set = getSortedSet(key)
     set.add(items)
 }

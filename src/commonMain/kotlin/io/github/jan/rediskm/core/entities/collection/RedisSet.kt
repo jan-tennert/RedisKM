@@ -24,9 +24,9 @@ class RedisSet internal constructor(val redisClient: RedisClient, val key: Strin
         return redisClient.receive()!!.value as Long
     }
 
-    suspend fun getDifference(vararg otherSets: String) = redisClient.getDifference(key, *otherSets)
+    suspend fun getDifference(vararg otherSets: String) = redisClient.getSetDifference(key, *otherSets)
 
-    suspend fun getDifferenceAndStore(destination: String, vararg otherSets: String) = redisClient.getDifferenceAndStore(destination, key, *otherSets)
+    suspend fun getDifferenceAndStore(destination: String, vararg otherSets: String) = redisClient.getSetDifferenceAndStore(destination, key, *otherSets)
 
     override suspend fun contains(element: String): Boolean {
         redisClient.sendCommand("SISMEMBER", key, element)
@@ -87,12 +87,12 @@ suspend fun RedisClient.getSetIntersectionAndStore(destination: String, vararg s
     return receive()!!.value as Long
 }
 
-suspend fun RedisClient.getDifference(vararg sets: String): Set<String> {
+suspend fun RedisClient.getSetDifference(vararg sets: String): Set<String> {
     sendCommand("SDIFF", *sets)
     return receive().fastCastTo<RedisListValue>().mapToStringList().toSet()
 }
 
-suspend fun RedisClient.getDifferenceAndStore(destination: String, vararg sets: String): Long {
+suspend fun RedisClient.getSetDifferenceAndStore(destination: String, vararg sets: String): Long {
     sendCommand("SDIFFSTORE", destination, *sets)
     return receive()!!.value as Long
 }
