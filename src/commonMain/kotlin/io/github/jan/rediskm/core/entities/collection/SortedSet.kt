@@ -30,9 +30,9 @@ class RedisSortedSet internal constructor(val redisClient: RedisClient, val key:
         return redisClient.receive()!!.value.fastCastTo()
     }
 
-    suspend fun increaseScoreBy(member: String, value: Long): Long {
+    suspend fun increaseScoreBy(member: String, value: Long): Double {
         redisClient.sendCommand("ZINCRBY", key, value, member)
-        return redisClient.receive()!!.value.toString().toLong()
+        return redisClient.receive()!!.value.toString().toDouble()
     }
 
     suspend fun getIntersectionAndStore(destination: String, vararg sortedSets: String, extraArgs: List<String> = emptyList()) = redisClient.getSortedSetIntersectionAndStore(destination, *sortedSets, extraArgs = extraArgs)
@@ -47,9 +47,9 @@ class RedisSortedSet internal constructor(val redisClient: RedisClient, val key:
         return (redisClient.receive() as RedisListValue).mapToStringList()
     }
 
-    suspend fun subListWithScores(start: Long, end: Long): Map<Long, String> {
+    suspend fun subListWithScores(start: Long, end: Long): Map<Double, String> {
         redisClient.sendCommand("ZRANGE", key, start, end, "WITHSCORES")
-        return redisClient.receive().fastCastTo<RedisListValue>().mapToStringList().chunked(2) { (key, value) -> key.toLong() to value }.toMap()
+        return redisClient.receive().fastCastTo<RedisListValue>().mapToStringList().chunked(2) { (key, value) -> key.toDouble() to value }.toMap()
     }
 
     suspend fun rangeByLex(min: String, max: String, limit: Long = -1, offset: Long = 0): List<String> {
@@ -62,9 +62,9 @@ class RedisSortedSet internal constructor(val redisClient: RedisClient, val key:
         return redisClient.receive().fastCastTo<RedisListValue>().mapToStringList()
     }
 
-    suspend fun rangeByScoreWithScores(min: Long, max: Long, limit: Long = -1, offset: Long = 0): Map<Long, String> {
+    suspend fun rangeByScoreWithScores(min: Long, max: Long, limit: Long = -1, offset: Long = 0): Map<Double, String> {
         redisClient.sendCommand("ZRANGEBYSCORE", key, min, max, limit, offset, "WITHSCORES")
-        return redisClient.receive().fastCastTo<RedisListValue>().mapToStringList().chunked(2) { (key, value) -> key.toLong() to value }.toMap()
+        return redisClient.receive().fastCastTo<RedisListValue>().mapToStringList().chunked(2) { (key, value) -> key.toDouble() to value }.toMap()
     }
 
     suspend fun indexOf(member: String): Long {
@@ -87,9 +87,9 @@ class RedisSortedSet internal constructor(val redisClient: RedisClient, val key:
         return redisClient.receive()!!.value.toString().toLong()
     }
 
-    suspend fun scoreOf(member: String): Long {
+    suspend fun scoreOf(member: String): Double {
         redisClient.sendCommand("ZSCORE", key, member)
-        return redisClient.receive()!!.value.toString().toLong()
+        return redisClient.receive()!!.value.toString().toDouble()
     }
 
     suspend fun mergeAndStore(destination: String, vararg sortedSets: String, extraArgs: List<String> = emptyList()) = redisClient.mergeSortedSetsAndStore(destination, *sortedSets, extraArgs = extraArgs)
