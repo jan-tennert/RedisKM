@@ -43,7 +43,7 @@ login.expire(10.hours)
 login.rename("newLogin")
 ```
 
-More information about Lists, Sets, the JSON module and more can be found in the [Wiki]()
+More information about Lists, Sets, the JSON module and more can be found in the [Wiki](https://github.com/jan-tennert/RedisKM/wiki).
 
 # Installation
 
