@@ -1,10 +1,12 @@
 package io.github.jan.rediskm.core
 
 import com.soywiz.klock.milliseconds
-import com.soywiz.klock.seconds
 import com.soywiz.klogger.Logger
 import com.soywiz.korio.async.delay
 import com.soywiz.korio.net.AsyncClient
+import io.github.jan.rediskm.core.entities.RedisListValue
+import io.github.jan.rediskm.core.entities.pipeline.RedisPipeline
+import io.github.jan.rediskm.core.entities.pipeline.RedisTransaction
 import io.github.jan.rediskm.core.entities.RedisValue
 import io.github.jan.rediskm.core.logging.LoggerConfig
 import io.github.jan.rediskm.core.logging.log
@@ -24,7 +26,7 @@ class RedisClient(private val host: String, private val port: Int, val username:
 
     lateinit var rawClient: AsyncClient
     val mutex = Mutex()
-    val pipeline = Pipeline()
+    val pipeline = RedisPipeline(this)
     val modules = mutableMapOf<String, RedisModule>()
     private val LOGGER = Logger("RedisClient")
     var locked = false
@@ -96,6 +98,7 @@ class RedisClient(private val host: String, private val port: Int, val username:
         } else {
             mutex.withLock { locked = true }
             rawClient.readResponse().also {
+                println(it)
                 mutex.withLock { locked = false }
                 LOGGER.debug {
                     "Received response: $it"
@@ -111,41 +114,16 @@ class RedisClient(private val host: String, private val port: Int, val username:
         rawClient.writeCommand(args.map(Any::toString))
     }
 
-    inner class Pipeline internal constructor() {
-
-        var queuedCommands: Int = 0
-            private set
-
-        suspend fun queueCommands(commands: List<PipelineCommand>) = queueCommands(*commands.toTypedArray())
-
-        suspend fun queueCommands(vararg commands: PipelineCommand) {
-            mutex.withLock {
-                queuedCommands += commands.size
-                locked = true
-            }
-            commands.forEach {
-                sendCommand(*it.args.toTypedArray())
-            }
-        }
-
-        suspend fun receiveAll(): List<RedisValue<*>?> {
-            val responses = mutableListOf<RedisValue<*>?>()
-            for(i in 0 until queuedCommands) {
-                responses.add(rawClient.readResponse())
-            }
-            mutex.withLock {
-                queuedCommands = 0
-                locked = false
-            }
-            return responses
-        }
-
+    suspend fun createTransaction(usePipeline: Boolean = true): RedisTransaction {
+        sendCommand("MULTI")
+        receive()
+        return RedisTransaction(this, usePipeline)
     }
 
-}
-
-data class PipelineCommand(val args: List<String>) {
-
-    constructor(vararg args: String) : this(args.toList())
+    suspend fun createTransaction(usePipeline: Boolean = true, init: suspend RedisTransaction.() -> Unit): RedisListValue {
+        val transaction = createTransaction(usePipeline)
+        init(transaction)
+        return transaction.execAll()
+    }
 
 }

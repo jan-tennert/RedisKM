@@ -2,14 +2,34 @@ package io.github.jan.rediskm.core
 
 import com.soywiz.korio.net.AsyncClient
 import com.soywiz.korio.stream.readString
+import io.github.jan.rediskm.core.entities.RedisDoubleValue
 import io.github.jan.rediskm.core.entities.RedisIntegerValue
 import io.github.jan.rediskm.core.entities.RedisListValue
 import io.github.jan.rediskm.core.entities.RedisStringValue
 import io.github.jan.rediskm.core.entities.RedisValue
 
 suspend fun AsyncClient.readResponse(): RedisValue<*>? = when(val char = read().toChar()) {
-    Constants.CHAR_PLUS -> RedisStringValue(readSimpleString())
-    Constants.CHAR_DOLLAR -> readRedisBulkString()?.let { RedisStringValue(it) }
+    Constants.CHAR_PLUS -> {
+        val value = readSimpleString()
+        if(value.contains(".") && value.toDoubleOrNull() != null) {
+            RedisDoubleValue(value.toDouble())
+        } else if(value.toIntOrNull() != null) {
+            RedisIntegerValue(value.toLong())
+        } else {
+            RedisStringValue(value)
+        }
+    }
+    Constants.CHAR_DOLLAR -> {
+        readRedisBulkString()?.let {
+            if(it.contains(".") && it.toDoubleOrNull() != null) {
+                RedisDoubleValue(it.toDouble())
+            } else if(it.toIntOrNull() != null) {
+                RedisIntegerValue(it.toLong())
+            } else {
+                RedisStringValue(it)
+            }
+        }
+    }
     Constants.CHAR_COLON -> RedisIntegerValue(readNumber())
     Constants.CHAR_MINUS -> throw RedisException(readSimpleString())
     Constants.CHAR_STAR -> RedisListValue(readArray())
@@ -41,7 +61,7 @@ private suspend fun AsyncClient.readRedisBulkString(): String? {
     return string
 }
 
-private suspend fun AsyncClient.readArray() : List<String> {
+private suspend fun AsyncClient.readArray() : List<RedisValue<*>?> {
     val length = buildString {
         var value = read().toChar()
         while(value != '\r') {
@@ -52,7 +72,7 @@ private suspend fun AsyncClient.readArray() : List<String> {
     if(read().toChar() != '\n') throw IllegalStateException("Expected \\r and \\n after the length of an array")
     return buildList {
         for(i in 1..length) {
-            add(readResponse().toString())
+            add(readResponse())
         }
     }
 }

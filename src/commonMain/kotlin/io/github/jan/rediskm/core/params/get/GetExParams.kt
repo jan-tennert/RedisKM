@@ -2,7 +2,7 @@ package io.github.jan.rediskm.core.params.get
 
 import io.github.jan.rediskm.core.params.Params
 
-class GetExParams(override val args: MutableList<Any>) : Params {
+class GetExParams(override val args: MutableList<String>) : Params {
 
     fun ex(seconds: Int) {
         args.addAll(listOf("EX", seconds.toString()))

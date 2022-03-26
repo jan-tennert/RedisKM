@@ -7,9 +7,9 @@ import io.github.jan.rediskm.core.entities.RedisListValue
  * Gets multiple values at once
  */
 @Suppress("UNCHECKED_CAST")
-suspend fun RedisClient.getMultiple(vararg keys: String): RedisListValue {
+suspend fun RedisClient.getMultiple(vararg keys: String): List<String> {
     sendCommand("MGET", *keys)
-    return (receive() as RedisListValue)
+    return (receive() as RedisListValue).mapToStringList()
 }
 
 /**

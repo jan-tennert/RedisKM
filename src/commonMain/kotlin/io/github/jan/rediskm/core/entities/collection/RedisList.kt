@@ -1,7 +1,9 @@
 package io.github.jan.rediskm.core.entities.collection
 
+import com.soywiz.kds.fastCastTo
 import com.soywiz.klock.TimeSpan
 import com.soywiz.klock.seconds
+import com.soywiz.korio.serialization.yaml.Yaml
 import io.github.jan.rediskm.core.RedisClient
 import io.github.jan.rediskm.core.RedisException
 import io.github.jan.rediskm.core.entities.RedisListValue
@@ -12,23 +14,23 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializerOrNull
 import kotlin.reflect.typeOf
 
-class RedisList(val redisClient: RedisClient, val key: String) : RedisObject<RedisListValue>, RedisCollection<String> {
+class RedisList internal constructor(val redisClient: RedisClient, val key: String) : RedisObject<List<String>>, RedisCollection<String> {
 
     override suspend fun get() = subList(0, -1)
 
-    suspend fun popFirst(timeout: TimeSpan = 0.seconds): RedisListValue {
+    suspend fun popFirst(timeout: TimeSpan = 0.seconds): List<String> {
         redisClient.sendCommand("BLPOP", key, timeout.seconds.toInt())
-        return redisClient.receive() as RedisListValue
+        return redisClient.receive().fastCastTo<RedisListValue>().mapToStringList()
     }
 
-    suspend fun popLast(timeout: TimeSpan = 0.seconds): RedisListValue {
+    suspend fun popLast(timeout: TimeSpan = 0.seconds): List<String> {
         redisClient.sendCommand("BRPOP", key, timeout.seconds.toInt())
-        return redisClient.receive() as RedisListValue
+        return redisClient.receive().fastCastTo<RedisListValue>().mapToStringList()
     }
 
-    suspend fun popAndPush(destination: String): RedisListValue {
+    suspend fun popAndPush(destination: String): List<String> {
         redisClient.sendCommand("BRPOPLPUSH", key, destination)
-        return redisClient.receive() as RedisListValue
+        return redisClient.receive().fastCastTo<RedisListValue>().mapToStringList()
     }
 
     suspend inline fun <reified T> get(index: Int): T {
@@ -61,9 +63,9 @@ class RedisList(val redisClient: RedisClient, val key: String) : RedisObject<Red
         return redisClient.receive()!!.value as Long
     }
 
-    suspend fun subList(start: Int, end: Int): RedisListValue {
+    suspend fun subList(start: Int, end: Int): List<String> {
         redisClient.sendCommand("LRANGE", key, start, end)
-        return redisClient.receive() as RedisListValue
+        return (redisClient.receive() as RedisListValue).mapToStringList()
     }
 
     suspend fun remove(value: String, count: Int = 0): Long {

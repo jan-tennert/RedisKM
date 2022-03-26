@@ -5,12 +5,12 @@ import io.github.jan.rediskm.core.RedisClient
 import io.github.jan.rediskm.core.entities.RedisListValue
 import io.github.jan.rediskm.core.entities.RedisObject
 
-class RedisMap(val redisClient: RedisClient, val key: String) : RedisObject<Map<String, String>>,
+class RedisMap internal constructor(val redisClient: RedisClient, val key: String) : RedisObject<Map<String, String>>,
     RedisCollection<Pair<String, String>> {
 
     override suspend fun get(): Map<String, String> {
         redisClient.sendCommand("HGETALL", key)
-        return redisClient.receive().fastCastTo<RedisListValue>().chunked(2) { (key, value) -> key to value }.toMap()
+        return redisClient.receive().fastCastTo<RedisListValue>().mapToStringList().chunked(2) { (key, value) -> key to value }.toMap()
     }
 
     suspend fun remove(vararg elements: String): Long {
@@ -28,9 +28,9 @@ class RedisMap(val redisClient: RedisClient, val key: String) : RedisObject<Map<
         return redisClient.receive()?.value?.toString()
     }
 
-    suspend fun getValues(): RedisListValue {
+    suspend fun getValues(): List<String> {
         redisClient.sendCommand("HVALS", key)
-        return redisClient.receive() as RedisListValue
+        return redisClient.receive().fastCastTo<RedisListValue>().mapToStringList()
     }
 
     suspend fun increaseKeyBy(key: String, value: Long): Long {
@@ -43,9 +43,9 @@ class RedisMap(val redisClient: RedisClient, val key: String) : RedisObject<Map<
         return redisClient.receive()!!.value.toString().toDouble()
     }
 
-    suspend fun getKeys(): RedisListValue {
+    suspend fun getKeys(): List<String> {
         redisClient.sendCommand("HKEYS", key)
-        return redisClient.receive() as RedisListValue
+        return redisClient.receive().fastCastTo<RedisListValue>().mapToStringList()
     }
 
     override suspend fun size(): Long {
@@ -53,9 +53,9 @@ class RedisMap(val redisClient: RedisClient, val key: String) : RedisObject<Map<
         return redisClient.receive()!!.value as Long
     }
 
-    suspend fun get(vararg keys: String): RedisListValue {
+    suspend fun get(vararg keys: String): List<String> {
         redisClient.sendCommand("HMGET", key, *keys)
-        return redisClient.receive() as RedisListValue
+        return redisClient.receive().fastCastTo<RedisListValue>().mapToStringList()
     }
 
     suspend fun add(map: Map<String, String> = mapOf()) {

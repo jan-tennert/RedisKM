@@ -18,9 +18,9 @@ class RedisJsonObject(override val redisClient: RedisClient, override val key: S
 
     suspend inline fun <reified T> getOrDefault(key: String, default: T) = getOrNull(key) ?: default
 
-    suspend fun getKeys(): RedisListValue {
+    suspend fun getKeys(): List<String> {
         redisClient.sendCommand("JSON.OBJKEYS", key, path)
-        return redisClient.receive() as RedisListValue
+        return redisClient.receive().fastCastTo<RedisListValue>().mapToStringList()
     }
 
     suspend fun getAmountOfKeys() : Long {

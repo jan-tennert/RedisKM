@@ -24,7 +24,7 @@ suspend fun RedisElement.persist() = run {
  */
 suspend fun RedisElement.getKeys(filter: String = "*") = run {
     redisClient.sendCommand("KEYS", filter)
-    (redisClient.receive() as RedisListValue)
+    (redisClient.receive() as RedisListValue).mapToStringList()
 }
 
 /**
@@ -116,15 +116,4 @@ suspend fun RedisElement.renameNX(newKey: String): Boolean {
 suspend fun RedisElement.getType(): RedisElement.Type {
     redisClient.sendCommand("TYPE", key)
     return RedisElement.Type.valueOf(redisClient.receive()!!.value.toString().uppercase())
-}
-
-/**
- * Pings the redis server
- * @return The amount it took to get a response form the server
- */
-suspend fun RedisClient.ping() : TimeSpan {
-    sendCommand("PING")
-    return measureTime {
-        receive()
-    }
 }

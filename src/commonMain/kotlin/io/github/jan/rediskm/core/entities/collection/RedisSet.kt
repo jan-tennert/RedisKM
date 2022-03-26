@@ -2,11 +2,15 @@ package io.github.jan.rediskm.core.entities.collection
 
 import com.soywiz.kds.fastCastTo
 import io.github.jan.rediskm.core.RedisClient
+import io.github.jan.rediskm.core.RedisException
 import io.github.jan.rediskm.core.entities.RedisListValue
 import io.github.jan.rediskm.core.entities.RedisObject
 import io.github.jan.rediskm.core.utils.serialize
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.serializerOrNull
+import kotlin.reflect.typeOf
 
-class RedisSet(val redisClient: RedisClient, val key: String): RedisObject<Set<String>>, RedisCollection<String> {
+class RedisSet internal constructor(val redisClient: RedisClient, val key: String): RedisObject<Set<String>>, RedisCollection<String> {
 
     suspend fun add(vararg elements: String): Long {
         redisClient.sendCommand("SADD", key, *elements)
@@ -31,7 +35,7 @@ class RedisSet(val redisClient: RedisClient, val key: String): RedisObject<Set<S
 
     override suspend fun get(): Set<String> {
         redisClient.sendCommand("SMEMBERS", key)
-        return redisClient.receive()!!.value.fastCastTo<RedisListValue>().toSet()
+        return redisClient.receive()!!.value.fastCastTo<RedisListValue>().mapToStringList().toSet()
     }
 
     suspend fun moveValue(value: String, destination: String): Boolean {
@@ -46,7 +50,7 @@ class RedisSet(val redisClient: RedisClient, val key: String): RedisObject<Set<S
 
     suspend fun getRandom(count: Int = 1): Set<String> {
         redisClient.sendCommand("SRANDMEMBER", key, count)
-        return redisClient.receive()!!.value.fastCastTo<RedisListValue>().toSet()
+        return redisClient.receive()!!.value.fastCastTo<RedisListValue>().mapToStringList().toSet()
     }
 
     suspend fun remove(vararg elements: String): Long {
@@ -58,33 +62,59 @@ class RedisSet(val redisClient: RedisClient, val key: String): RedisObject<Set<S
 
     suspend fun mergeSetsAndStore(destination: String, vararg otherSets: String) = redisClient.mergeSetsAndStore(destination, key, *otherSets)
 
+    suspend fun getIntersection(vararg otherSets: String) = redisClient.getSetIntersection(key, *otherSets)
+
+    suspend fun getIntersectionAndStore(destination: String, vararg otherSets: String) = redisClient.getSetIntersectionAndStore(destination, key, *otherSets)
+
 }
 
 suspend fun RedisClient.mergeSets(vararg otherSets: String): Set<String> {
     sendCommand("SUNION", *otherSets)
-    return receive()!!.value.fastCastTo<RedisListValue>().toSet()
+    return receive()!!.value.fastCastTo<RedisListValue>().mapToStringList().toSet()
 }
 
 suspend fun RedisClient.mergeSetsAndStore(destination: String, vararg otherSets: String) {
     sendCommand("SUNIONSTORE", destination, *otherSets)
 }
 
-suspend fun RedisClient.getIntersection(vararg sets: String): Set<String> {
+suspend fun RedisClient.getSetIntersection(vararg sets: String): Set<String> {
     sendCommand("SINTER", *sets)
-    return receive().fastCastTo<RedisListValue>().toSet()
+    return receive().fastCastTo<RedisListValue>().mapToStringList().toSet()
 }
 
-suspend fun RedisClient.getIntersectionAndStore(destination: String, vararg sets: String): Long {
+suspend fun RedisClient.getSetIntersectionAndStore(destination: String, vararg sets: String): Long {
     sendCommand("SINTERSTORE", destination, *sets)
     return receive()!!.value as Long
 }
 
 suspend fun RedisClient.getDifference(vararg sets: String): Set<String> {
     sendCommand("SDIFF", *sets)
-    return receive().fastCastTo<RedisListValue>().toSet()
+    return receive().fastCastTo<RedisListValue>().mapToStringList().toSet()
 }
 
 suspend fun RedisClient.getDifferenceAndStore(destination: String, vararg sets: String): Long {
     sendCommand("SDIFFSTORE", destination, *sets)
     return receive()!!.value as Long
+}
+
+fun RedisClient.getSet(key: String) = RedisSet(this, key)
+
+suspend inline fun <reified T> RedisClient.getSet(key: String) : Set<T> {
+    val set = getSet(key).get()
+    return when(T::class) {
+        String::class -> set.map { it as T }.toSet()
+        Int::class -> set.map { it.toInt() as T }.toSet()
+        Long::class -> set.map { it.toLong() as T }.toSet()
+        Float::class -> set.map { it.toFloat() as T }.toSet()
+        Double::class -> set.map { it.toDouble() as T }.toSet()
+        else -> {
+            val serializer = serializerOrNull(typeOf<T>()) ?: throw RedisException("Unsupported type: ${T::class}")
+            set.map { Json.decodeFromString(serializer, it) as T }.toSet()
+        }
+    }
+}
+
+suspend inline fun <reified T> RedisClient.putSet(key: String, vararg values: T) {
+    val set = getSet(key)
+    set.add(*values)
 }
