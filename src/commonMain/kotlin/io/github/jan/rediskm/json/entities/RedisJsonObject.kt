@@ -6,6 +6,7 @@ import io.github.jan.rediskm.core.entities.RedisIntegerValue
 import io.github.jan.rediskm.core.entities.RedisListValue
 import io.github.jan.rediskm.json.params.get
 import io.github.jan.rediskm.json.params.json
+import io.github.jan.rediskm.json.params.put
 
 class RedisJsonObject(override val redisClient: RedisClient, override val key: String, override val path: String) : RedisJsonElement {
 
@@ -17,6 +18,11 @@ class RedisJsonObject(override val redisClient: RedisClient, override val key: S
     suspend inline fun <reified T> get(key: String) = getOrNull<T>(key)!!
 
     suspend inline fun <reified T> getOrDefault(key: String, default: T) = getOrNull(key) ?: default
+
+    suspend inline fun <reified T> put(key: String, value: T) {
+        val newPath = "$path.$key"
+        redisClient.json.put(this.key, newPath, value)
+    }
 
     suspend fun getKeys(): List<String> {
         redisClient.sendCommand("JSON.OBJKEYS", key, path)

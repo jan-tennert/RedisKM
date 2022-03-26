@@ -98,7 +98,6 @@ class RedisClient(private val host: String, private val port: Int, val username:
         } else {
             mutex.withLock { locked = true }
             rawClient.readResponse().also {
-                println(it)
                 mutex.withLock { locked = false }
                 LOGGER.debug {
                     "Received response: $it"
