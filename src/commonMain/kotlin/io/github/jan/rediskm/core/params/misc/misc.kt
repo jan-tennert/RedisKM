@@ -2,7 +2,6 @@ package io.github.jan.rediskm.core.params.misc
 
 import com.soywiz.klock.DateTime
 import com.soywiz.klock.TimeSpan
-import com.soywiz.klock.measureTime
 import com.soywiz.klock.milliseconds
 import io.github.jan.rediskm.core.RedisClient
 import io.github.jan.rediskm.core.entities.RedisElement

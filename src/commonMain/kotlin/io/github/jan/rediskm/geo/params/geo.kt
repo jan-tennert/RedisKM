@@ -1,15 +1,11 @@
 package io.github.jan.rediskm.geo.params
 
 import com.soywiz.kds.fastCastTo
-import com.soywiz.korio.dynamic.KDynamic.Companion.map
-import com.soywiz.korio.dynamic.KDynamic.Companion.toDouble
 import io.github.jan.rediskm.core.RedisClient
 import io.github.jan.rediskm.core.RedisModule
 import io.github.jan.rediskm.core.entities.RedisDoubleValue
 import io.github.jan.rediskm.core.entities.RedisIntegerValue
 import io.github.jan.rediskm.core.entities.RedisListValue
-import io.github.jan.rediskm.core.entities.RedisValue
-import io.github.jan.rediskm.core.params.put.SetParams
 
 class GeoModule internal constructor(val client: RedisClient) : RedisModule
 

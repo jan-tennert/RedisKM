@@ -5,9 +5,9 @@ import com.soywiz.klogger.Logger
 import com.soywiz.korio.async.delay
 import com.soywiz.korio.net.AsyncClient
 import io.github.jan.rediskm.core.entities.RedisListValue
+import io.github.jan.rediskm.core.entities.RedisValue
 import io.github.jan.rediskm.core.entities.pipeline.RedisPipeline
 import io.github.jan.rediskm.core.entities.pipeline.RedisTransaction
-import io.github.jan.rediskm.core.entities.RedisValue
 import io.github.jan.rediskm.core.logging.LoggerConfig
 import io.github.jan.rediskm.core.logging.log
 import kotlinx.coroutines.sync.Mutex
