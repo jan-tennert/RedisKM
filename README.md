@@ -28,7 +28,7 @@ Available for:
 You can build a new connection very easily with RedisClient:
 
 ```kotlin
-val client = RedisClient(host = "URL", port = port, password = "password", user = "user")
+val client = RedisClient.create(host = "URL", port = port, password = "password", user = "user")
 client.connect()
 
 //then set a value and get it back
