@@ -4,33 +4,70 @@ import com.soywiz.klock.milliseconds
 import com.soywiz.klogger.Logger
 import com.soywiz.korio.async.delay
 import com.soywiz.korio.net.AsyncClient
+import io.github.jan.rediskm.core.annotiations.RedisKMInternal
 import io.github.jan.rediskm.core.entities.RedisListValue
 import io.github.jan.rediskm.core.entities.RedisValue
 import io.github.jan.rediskm.core.entities.pipeline.RedisPipeline
+import io.github.jan.rediskm.core.entities.pipeline.RedisPipelineImpl
 import io.github.jan.rediskm.core.entities.pipeline.RedisTransaction
+import io.github.jan.rediskm.core.entities.pipeline.RedisTransactionImpl
 import io.github.jan.rediskm.core.logging.LoggerConfig
 import io.github.jan.rediskm.core.logging.log
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-/**
- * Creates a new Redis client.
- *
- * @param host The hostname of the Redis server.
- * @param port The port of the Redis server.
- * @param password The password used to authenticated with the Redis server.
- * @param username The username used to authenticated with the Redis server. (optional)
- * @param secure Whether to use SSL or not. (optional, only available for JVM, JS and Windows)
- */
-class RedisClient(private val host: String, private val port: Int, val username: String? = null, val password: String, val secure: Boolean = false, val loggerConfig: LoggerConfig = LoggerConfig()) {
+sealed interface RedisClient {
 
-    lateinit var rawClient: AsyncClient
-    val mutex = Mutex()
-    val pipeline = RedisPipeline(this)
-    val modules = mutableMapOf<String, RedisModule>()
-    private val LOGGER = Logger("RedisClient")
+    val host: String
+    val username: String?
+    val password: String
+    val isSecure: Boolean
+    val isConnected: Boolean
+    val modules: MutableMap<String, RedisModule>
+    val pipeline: RedisPipeline
+
+    @RedisKMInternal
+    val rawClient: AsyncClient
+
+    suspend fun connect(auth: Boolean = true)
+
+    suspend fun disconnect()
+
+    suspend fun authenticate()
+
+    suspend fun receive(): RedisValue<*>?
+
+    suspend fun sendCommand(vararg args: Any)
+
+    suspend fun createTransaction(usePipeline: Boolean = true): RedisTransaction
+
+    suspend fun createTransaction(usePipeline: Boolean = true, init: suspend RedisTransaction.() -> Unit): RedisListValue
+
+    companion object {
+
+        fun create(host: String, port: Int, password: String, username: String? = null, isSecure: Boolean = false, loggerConfig: LoggerConfig = LoggerConfig()): RedisClient {
+            return RedisClientImpl(host, port, username, password, isSecure, loggerConfig)
+        }
+
+        suspend fun createAndConnect(host: String, port: Int, password: String, username: String? = null, isSecure: Boolean = false, loggerConfig: LoggerConfig = LoggerConfig()): RedisClient {
+            return RedisClientImpl(host, port, username, password, isSecure, loggerConfig).apply {
+                connect()
+            }
+        }
+
+    }
+
+}
+
+internal class RedisClientImpl(override val host: String, private val port: Int, override val username: String? = null, override val password: String, override val isSecure: Boolean = false, loggerConfig: LoggerConfig = LoggerConfig()) : RedisClient {
+
+    @OptIn(RedisKMInternal::class)
+    override lateinit var rawClient: AsyncClient
+    override val modules = mutableMapOf<String, RedisModule>()
+    private val mutex = Mutex()
+    override val pipeline: RedisPipeline = RedisPipelineImpl(this)
+    val LOGGER = Logger("RedisClient")
     var locked = false
-        internal set
 
     init {
         LOGGER.level = loggerConfig.level
@@ -40,7 +77,7 @@ class RedisClient(private val host: String, private val port: Int, val username:
     /**
      * Whether the client is connected to the server
      */
-    val isConnected: Boolean
+    override val isConnected: Boolean
         get() = ::rawClient.isInitialized && rawClient.connected
 
     /**
@@ -48,12 +85,12 @@ class RedisClient(private val host: String, private val port: Int, val username:
      *
      * @param auth Whether it should authenticate with the server after connecting. You can do that later with [authenticate]
      */
-    suspend fun connect(auth: Boolean = true) {
+    override suspend fun connect(auth: Boolean) {
         LOGGER.log(true, Logger.Level.INFO) {
             "Connecting to $host:$port"
         }
         try {
-            rawClient = AsyncClient.createAndConnect(host, port, secure)
+            rawClient = AsyncClient.createAndConnect(host, port, isSecure)
         } catch(_: Exception) {
             throw RedisException("Failed to connect to $host:$port")
         }
@@ -66,7 +103,7 @@ class RedisClient(private val host: String, private val port: Int, val username:
     /**
      * Disconnects from the redis server
      */
-    suspend fun disconnect() {
+    override suspend fun disconnect() {
         sendCommand("QUIT")
         receive()
         rawClient.close()
@@ -76,7 +113,7 @@ class RedisClient(private val host: String, private val port: Int, val username:
      *
      * @throws RedisException if authentication fails.
      */
-    suspend fun authenticate() {
+    override suspend fun authenticate() {
         LOGGER.log(true, Logger.Level.INFO) {
             "Authenticating..."
         }
@@ -89,7 +126,7 @@ class RedisClient(private val host: String, private val port: Int, val username:
         }
     }
     
-    suspend fun receive(): RedisValue<*>? {
+    override suspend fun receive(): RedisValue<*>? {
         return if(locked) {
             while(locked) {
                 delay(1.milliseconds)
@@ -106,23 +143,23 @@ class RedisClient(private val host: String, private val port: Int, val username:
         }
     }
 
-    suspend fun sendCommand(vararg args: Any) {
+    override suspend fun sendCommand(vararg args: Any) {
         LOGGER.debug {
             "Sending command (args): ${args.joinToString(" ")}"
         }
         rawClient.writeCommand(args.map(Any::toString))
     }
 
-    suspend fun createTransaction(usePipeline: Boolean = true): RedisTransaction {
+    override suspend fun createTransaction(usePipeline: Boolean): RedisTransaction {
         sendCommand("MULTI")
         receive()
-        return RedisTransaction(this, usePipeline)
+        return RedisTransactionImpl(this, usePipeline)
     }
 
-    suspend fun createTransaction(usePipeline: Boolean = true, init: suspend RedisTransaction.() -> Unit): RedisListValue {
+    override suspend fun createTransaction(usePipeline: Boolean, init: suspend RedisTransaction.() -> Unit): RedisListValue {
         val transaction = createTransaction(usePipeline)
         init(transaction)
-        return transaction.execAll()
+        return transaction.executeAll()
     }
 
 }

@@ -117,7 +117,7 @@ suspend fun GeoModule.search(key: String, params: GeoSearchParams.() -> Unit): L
                         distance = queryItemValue.value
                     }
                     is RedisIntegerValue -> {
-                        hash = queryItemValue.value as Long
+                        hash = queryItemValue.value
                     }
                     is RedisListValue -> {
                         longitude = queryItemValue.toList()[0]!!.value as Double

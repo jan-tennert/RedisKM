@@ -24,10 +24,10 @@ data class RedisDoubleValue(override val value: Double) : RedisValue<Double> {
 
 }
 
-data class RedisListValue(override val value: List<RedisValue<*>?>) : RedisValue<List<RedisValue<*>?>>, Iterable<RedisValue<*>?> by value {
+data class RedisListValue(override val value: List<RedisValue<*>?>) : RedisValue<List<RedisValue<*>?>>, List<RedisValue<*>?> by value {
 
     override fun toString() = value.toString()
 
-    fun mapToStringList() = value.map { it.toString() }
+    fun mapToStringList() = value.map(RedisValue<*>?::toString)
 
 }

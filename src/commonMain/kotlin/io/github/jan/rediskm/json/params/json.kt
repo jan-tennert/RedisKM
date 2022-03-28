@@ -10,8 +10,10 @@ import io.github.jan.rediskm.json.entities.RedisJsonObject
 import io.github.jan.rediskm.json.entities.RedisJsonString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlin.jvm.JvmInline
 
-class JsonModule internal constructor(val client: RedisClient) : RedisModule
+@JvmInline
+value class JsonModule internal constructor(val client: RedisClient) : RedisModule
 
 val RedisClient.json: JsonModule
     get() {

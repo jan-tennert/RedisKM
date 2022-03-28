@@ -2,44 +2,60 @@ package io.github.jan.rediskm.core.entities.pipeline
 
 import com.soywiz.korio.util.buildList
 import io.github.jan.rediskm.core.RedisClient
+import io.github.jan.rediskm.core.RedisClientImpl
 import io.github.jan.rediskm.core.entities.RedisValue
 import io.github.jan.rediskm.core.readResponse
+import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-class RedisPipeline internal constructor(private val client: RedisClient) {
+sealed interface RedisPipeline {
+
+    suspend fun sendCommands(commands: Collection<RawCommand>)
+
+    suspend fun sendCommands(vararg commands: RawCommand) = sendCommands(commands.toList())
+
+    suspend fun sendAndReceive(vararg commands: RawCommand) = sendAndReceive(commands.toList())
+
+    suspend fun sendAndReceive(commands: Collection<RawCommand>): List<RedisValue<*>?>
+
+    suspend fun receiveAll(): List<RedisValue<*>?>
+
+}
+
+internal class RedisPipelineImpl(private val client: RedisClient) : RedisPipeline {
 
     var queuedCommands: Int = 0
-        private set
+    private val mutex = Mutex()
 
-    suspend fun sendCommands(commands: Iterable<RawCommand>) = sendCommands(*commands.toList().toTypedArray())
+    override suspend fun sendCommands(vararg commands: RawCommand) = sendCommands(commands.toList())
 
-    suspend fun sendCommands(vararg commands: RawCommand) {
-        client.mutex.withLock {
+    override suspend fun sendCommands(commands: Collection<RawCommand>) {
+        mutex.withLock {
             queuedCommands += commands.size
-            client.locked = true
+            (client as RedisClientImpl).locked = true
         }
         commands.forEach {
             client.sendCommand(*it.args.toTypedArray())
         }
     }
 
-    suspend fun sendAndReceive(vararg commands: RawCommand): List<RedisValue<*>?> {
-        sendCommands(*commands)
-        return receiveAll()
-    }
-
-    suspend fun sendAndReceive(commands: Iterable<RawCommand>): List<RedisValue<*>?> {
+    override suspend fun sendAndReceive(commands: Collection<RawCommand>): List<RedisValue<*>?> {
         sendCommands(commands)
         return receiveAll()
     }
 
-    suspend fun receiveAll() = buildList<RedisValue<*>?> {
+    override suspend fun sendAndReceive(vararg commands: RawCommand): List<RedisValue<*>?> {
+        sendCommands(*commands)
+        return receiveAll()
+    }
+
+    override suspend fun receiveAll() = buildList<RedisValue<*>?> {
         for (i in 0 until queuedCommands) {
-            add(client.rawClient.readResponse())
+            add((client as RedisClientImpl).rawClient.readResponse())
         }
-        client.mutex.withLock {
+        mutex.withLock {
             queuedCommands = 0
-            client.locked = false
+            (client as RedisClientImpl).locked = false
         }
     }
 

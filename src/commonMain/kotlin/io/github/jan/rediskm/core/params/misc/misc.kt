@@ -5,8 +5,8 @@ import com.soywiz.klock.TimeSpan
 import com.soywiz.klock.milliseconds
 import io.github.jan.rediskm.core.RedisClient
 import io.github.jan.rediskm.core.entities.RedisElement
+import io.github.jan.rediskm.core.entities.RedisElementImpl
 import io.github.jan.rediskm.core.entities.RedisListValue
-import kotlinx.coroutines.sync.withLock
 
 /**
  * Removes a timeout from a key
@@ -66,7 +66,7 @@ suspend fun RedisElement.exists() = redisClient.exists(key) == 1L
 /**
  * Sets the [RedisElement.key] to expire after [timeout]
  */
-suspend fun RedisElement.expire(timeout: TimeSpan): Boolean {
+suspend fun RedisElement.expireIn(timeout: TimeSpan): Boolean {
     redisClient.sendCommand("PEXPIRE", key, timeout.millisecondsLong)
     return redisClient.receive()!!.value == 1L
 }
@@ -95,24 +95,22 @@ suspend fun RedisClient.getRandomKey(): String? {
 /**
  * Renames the key [RedisElement.key] to [newKey]
  */
-suspend fun RedisElement.rename(newKey: String): Boolean {
+suspend fun RedisElement.rename(newKey: String): RedisElement {
     redisClient.sendCommand("RENAME", key, newKey)
-    return (redisClient.receive()!!.value == 1L).also {
-        if(it) mutex.withLock { key = newKey }
-    }
+    redisClient.receive()
+    return RedisElementImpl(newKey, redisClient)
 }
 
 /**
  * Renames [RedisElement.key] to [newKey] only if [newKey] doesn't exist.
  */
-suspend fun RedisElement.renameNX(newKey: String): Boolean {
+suspend fun RedisElement.renameNX(newKey: String): RedisElement {
     redisClient.sendCommand("RENAMENX", key, newKey)
-    return (redisClient.receive()!!.value == 1L).also {
-        if(it) mutex.withLock { key = newKey }
-    }
+    redisClient.receive()
+    return RedisElementImpl(newKey, redisClient)
 }
 
-suspend fun RedisElement.getType(): RedisElement.Type {
+suspend fun RedisElement.getType(): RedisElement.ElementType {
     redisClient.sendCommand("TYPE", key)
-    return RedisElement.Type.valueOf(redisClient.receive()!!.value.toString().uppercase())
+    return RedisElement.ElementType.valueOf(redisClient.receive()!!.value.toString().uppercase())
 }

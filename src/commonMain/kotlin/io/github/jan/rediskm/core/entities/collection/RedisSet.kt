@@ -4,13 +4,12 @@ import com.soywiz.kds.fastCastTo
 import io.github.jan.rediskm.core.RedisClient
 import io.github.jan.rediskm.core.RedisException
 import io.github.jan.rediskm.core.entities.RedisListValue
-import io.github.jan.rediskm.core.entities.RedisObject
 import io.github.jan.rediskm.core.utils.serialize
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializerOrNull
 import kotlin.reflect.typeOf
 
-class RedisSet internal constructor(val redisClient: RedisClient, val key: String): RedisObject<Set<String>>, RedisCollection<String> {
+class RedisSet internal constructor(override val redisClient: RedisClient, override val key: String): RedisCollection<Set<String>> {
 
     suspend fun add(vararg elements: String): Long {
         redisClient.sendCommand("SADD", key, *elements)

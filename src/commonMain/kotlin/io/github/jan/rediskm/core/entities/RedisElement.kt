@@ -6,23 +6,13 @@ import io.github.jan.rediskm.core.RedisClient
 import io.github.jan.rediskm.core.params.get.get
 import io.github.jan.rediskm.core.params.put.SetParams
 import io.github.jan.rediskm.core.params.put.put
-import kotlinx.coroutines.sync.Mutex
 
-class RedisElement(val redisClient: RedisClient, key: String) {
+interface RedisElement {
 
-    var key: String = key
-        internal set
-    internal val mutex = Mutex()
+    val key: String
+    val redisClient: RedisClient
 
-    suspend inline fun <reified T> get(): T? = redisClient.get(key)
-
-    suspend inline fun <reified T> set(value: T, extraParams: SetParams.() -> Unit = {}) = redisClient.put(key, value, extraParams)
-
-    suspend inline fun <reified T> set(value: T, expirationDate: DateTime, extraParams: SetParams.() -> Unit = {}) = redisClient.put(key, value, expirationDate, extraParams)
-
-    suspend inline fun <reified T> set(value: T, expirationDuration: TimeSpan, extraParams: SetParams.() -> Unit = {}) = redisClient.put(key, value, expirationDuration, extraParams)
-
-    enum class Type {
+    enum class ElementType {
         STRING,
         LIST,
         SET,
@@ -32,3 +22,13 @@ class RedisElement(val redisClient: RedisClient, key: String) {
     }
 
 }
+
+class RedisElementImpl internal constructor(override val key: String, override val redisClient: RedisClient): RedisElement
+
+suspend inline fun <reified T> RedisElement.get(): T? = redisClient.get(key)
+
+suspend inline fun <reified T> RedisElement.set(value: T, extraParams: SetParams.() -> Unit = {}) = redisClient.put(key, value, extraParams)
+
+suspend inline fun <reified T> RedisElement.set(value: T, expirationDate: DateTime, extraParams: SetParams.() -> Unit = {}) = redisClient.put(key, value, expirationDate, extraParams)
+
+suspend inline fun <reified T> RedisElement.set(value: T, expirationDuration: TimeSpan, extraParams: SetParams.() -> Unit = {}) = redisClient.put(key, value, expirationDuration, extraParams)

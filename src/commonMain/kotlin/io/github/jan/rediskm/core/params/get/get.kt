@@ -1,7 +1,7 @@
 package io.github.jan.rediskm.core.params.get
 
 import io.github.jan.rediskm.core.RedisClient
-import io.github.jan.rediskm.core.entities.RedisElement
+import io.github.jan.rediskm.core.entities.RedisElementImpl
 import io.github.jan.rediskm.core.utils.deserialize
 
 /**
@@ -24,4 +24,4 @@ suspend inline fun <reified T> RedisClient.get(key: String, delete: Boolean = fa
     return deserialize(result)
 }
 
-suspend fun RedisClient.getElement(key: String) = RedisElement(this, key)
+suspend fun RedisClient.getElement(key: String) = RedisElementImpl(key, this)

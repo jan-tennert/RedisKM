@@ -4,30 +4,44 @@ import com.soywiz.kds.fastCastTo
 import io.github.jan.rediskm.core.RedisClient
 import io.github.jan.rediskm.core.entities.RedisListValue
 
-class RedisTransaction internal constructor(private val client: RedisClient, private val usePipeline: Boolean) {
+sealed interface RedisTransaction {
 
-    suspend fun queueCommands(vararg commands: RawCommand) {
+    suspend fun queueCommands(vararg commands: RawCommand) = queueCommands(commands.toList())
+
+    suspend fun queueCommands(commands: List<RawCommand>)
+
+    suspend fun queueCommand(vararg args: String) = queueCommands(RawCommand(*args))
+
+    suspend fun executeAll() : RedisListValue
+
+    suspend fun discardAll()
+
+}
+
+internal class RedisTransactionImpl(private val redisClient: RedisClient, private val usePipeline: Boolean) : RedisTransaction {
+
+    override suspend fun queueCommands(commands: List<RawCommand>) {
         if (usePipeline) {
-            client.pipeline.sendCommands(*commands)
+            redisClient.pipeline.sendCommands(commands)
         } else {
             commands.forEach {
-                client.sendCommand(*it.args.toTypedArray())
-                client.receive()
+                redisClient.sendCommand(*it.args.toTypedArray())
+                redisClient.receive()
             }
         }
     }
 
-    suspend fun execAll(): RedisListValue {
+    override suspend fun executeAll(): RedisListValue {
         if(usePipeline) {
-            client.pipeline.receiveAll()
+            redisClient.pipeline.receiveAll()
         }
-        client.sendCommand("EXEC")
-        return client.receive().fastCastTo<RedisListValue>()
+        redisClient.sendCommand("EXEC")
+        return redisClient.receive().fastCastTo<RedisListValue>()
     }
 
-    suspend fun discardAll() {
-        client.sendCommand("DISCARD")
-        client.receive()
+    override suspend fun discardAll() {
+        redisClient.sendCommand("DISCARD")
+        redisClient.receive()
     }
 
 }

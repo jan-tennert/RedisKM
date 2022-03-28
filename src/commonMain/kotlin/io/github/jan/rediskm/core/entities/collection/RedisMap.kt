@@ -2,11 +2,11 @@ package io.github.jan.rediskm.core.entities.collection
 
 import com.soywiz.kds.fastCastTo
 import io.github.jan.rediskm.core.RedisClient
+import io.github.jan.rediskm.core.entities.RedisElement
 import io.github.jan.rediskm.core.entities.RedisListValue
 import io.github.jan.rediskm.core.entities.RedisObject
 
-class RedisMap internal constructor(val redisClient: RedisClient, val key: String) : RedisObject<Map<String, String>>,
-    RedisCollection<Pair<String, String>> {
+class RedisMap internal constructor(override val redisClient: RedisClient, override val key: String) : RedisObject<Map<String, String>>, RedisElement {
 
     override suspend fun get(): Map<String, String> {
         redisClient.sendCommand("HGETALL", key)
@@ -18,7 +18,7 @@ class RedisMap internal constructor(val redisClient: RedisClient, val key: Strin
         return redisClient.receive()!!.value as Long
     }
 
-    override suspend fun contains(element: String): Boolean {
+    suspend fun contains(element: String): Boolean {
         redisClient.sendCommand("HEXISTS", key, element)
         return redisClient.receive()!!.value == 1L
     }
@@ -48,7 +48,7 @@ class RedisMap internal constructor(val redisClient: RedisClient, val key: Strin
         return redisClient.receive().fastCastTo<RedisListValue>().mapToStringList()
     }
 
-    override suspend fun size(): Long {
+    suspend fun size(): Long {
         redisClient.sendCommand("HLEN", key)
         return redisClient.receive()!!.value as Long
     }

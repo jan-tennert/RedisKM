@@ -6,14 +6,13 @@ import com.soywiz.klock.seconds
 import io.github.jan.rediskm.core.RedisClient
 import io.github.jan.rediskm.core.RedisException
 import io.github.jan.rediskm.core.entities.RedisListValue
-import io.github.jan.rediskm.core.entities.RedisObject
 import io.github.jan.rediskm.core.utils.deserialize
 import io.github.jan.rediskm.core.utils.serialize
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializerOrNull
 import kotlin.reflect.typeOf
 
-class RedisList internal constructor(val redisClient: RedisClient, val key: String) : RedisObject<List<String>>, RedisCollection<String> {
+class RedisList internal constructor(override val redisClient: RedisClient, override val key: String) : RedisCollection<List<String>> {
 
     override suspend fun get() = subList(0, -1)
 
