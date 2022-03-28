@@ -7,6 +7,7 @@ import io.github.jan.rediskm.core.entities.RedisListValue
 import io.github.jan.rediskm.core.entities.RedisObject
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
+import kotlin.jvm.JvmName
 
 class RedisMap internal constructor(override val redisClient: RedisClient, override val key: String) : RedisObject<Map<String, String>>, RedisElement {
 
@@ -43,6 +44,7 @@ class RedisMap internal constructor(override val redisClient: RedisClient, overr
     /**
      * Returns the value at the specified [key] and deserializes it to [T]. Null if the key does not exist.
      */
+    @JvmName("getAs")
     suspend inline fun <reified T> get(key: String): T? {
         redisClient.sendCommand("HGET", key)
         return redisClient.receive()?.value?.toString()?.let { Json.decodeFromString(it) }
