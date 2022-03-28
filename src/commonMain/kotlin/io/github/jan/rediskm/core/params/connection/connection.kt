@@ -16,6 +16,9 @@ val RedisClient.connection: ConnectionModule
         }
     }
 
+/**
+ * Sends the [message] to the server and returns [message].
+ */
 suspend fun ConnectionModule.echo(message: String): String {
     client.sendCommand("ECHO", message)
     return client.receive()!!.value.toString()

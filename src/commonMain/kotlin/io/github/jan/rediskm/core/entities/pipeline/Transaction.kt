@@ -6,14 +6,29 @@ import io.github.jan.rediskm.core.entities.RedisListValue
 
 sealed interface RedisTransaction {
 
+    /**
+     * Queues multiple [commands] without executing them
+     */
     suspend fun queueCommands(vararg commands: RawCommand) = queueCommands(commands.toList())
 
+    /**
+     * Queues multiple [commands] without executing them
+     */
     suspend fun queueCommands(commands: List<RawCommand>)
 
+    /**
+     * Queues a command without executing him
+     */
     suspend fun queueCommand(vararg args: String) = queueCommands(RawCommand(*args))
 
+    /**
+     * Executes all queued commands
+     */
     suspend fun executeAll() : RedisListValue
 
+    /**
+     * Discards all queued commands
+     */
     suspend fun discardAll()
 
 }

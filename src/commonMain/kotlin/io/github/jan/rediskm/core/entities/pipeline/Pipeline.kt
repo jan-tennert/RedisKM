@@ -10,14 +10,29 @@ import kotlinx.coroutines.sync.withLock
 
 sealed interface RedisPipeline {
 
+    /**
+     * Sends multiple commands to the server and does not wait for the responses.
+     */
     suspend fun sendCommands(commands: Collection<RawCommand>)
 
+    /**
+     * Sends multiple commands to the server and does not wait for the responses.
+     */
     suspend fun sendCommands(vararg commands: RawCommand) = sendCommands(commands.toList())
 
+    /**
+     * Sends multiple commands to the server and gets all responses after all commands are sent.
+     */
     suspend fun sendAndReceive(vararg commands: RawCommand) = sendAndReceive(commands.toList())
 
+    /**
+     * Sends multiple commands to the server and gets all responses after all commands are sent.
+     */
     suspend fun sendAndReceive(commands: Collection<RawCommand>): List<RedisValue<*>?>
 
+    /**
+     * Receives the responses of the last commands sent to the server.
+     */
     suspend fun receiveAll(): List<RedisValue<*>?>
 
 }

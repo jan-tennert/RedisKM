@@ -22,6 +22,10 @@ sealed interface RedisClient {
     val username: String?
     val password: String
     val isSecure: Boolean
+
+    /**
+     * Whether the client is connected to the server
+     */
     val isConnected: Boolean
     val modules: MutableMap<String, RedisModule>
     val pipeline: RedisPipeline
@@ -29,26 +33,70 @@ sealed interface RedisClient {
     @RedisKMInternal
     val rawClient: AsyncClient
 
+    /**
+     * Connects to the redis server
+     *
+     * @param auth Whether it should authenticate with the server after connecting. You can do that later with [authenticate]
+     */
     suspend fun connect(auth: Boolean = true)
 
+    /**
+     * Disconnects from the redis server
+     */
     suspend fun disconnect()
 
+    /**
+     * Authenticate to the server.
+     *
+     * @throws RedisException if authentication fails.
+     */
     suspend fun authenticate()
 
+    /**
+     * Used for commands: Receives the last response from the server (blocks until it gets one)
+     * @return A [RedisValue]. Can be a string, double, long or a list.
+     */
     suspend fun receive(): RedisValue<*>?
 
+    /**
+     * Sends a command to the server, if the built-in ones don't have your desired command.
+     */
     suspend fun sendCommand(vararg args: Any)
 
+    /**
+     * Creates a new [RedisTransaction], which queues up commands to be sent to the server.
+     */
     suspend fun createTransaction(usePipeline: Boolean = true): RedisTransaction
 
+    /**
+     * Creates a new [RedisTransaction], which queues up commands to be sent to the server.
+     */
     suspend fun createTransaction(usePipeline: Boolean = true, init: suspend RedisTransaction.() -> Unit): RedisListValue
 
     companion object {
 
+        /**
+         * Creates a new [RedisClient]
+         * @param host The hostname of the server
+         * @param port The port of the server
+         * @param username The username to authenticate with (optional)
+         * @param password The password to authenticate with
+         * @param isSecure Whether the connection should be secure or not. Only on jvm, mingwx64 and js
+         * @param loggerConfig Optional custom logger configuration
+         */
         fun create(host: String, port: Int, password: String, username: String? = null, isSecure: Boolean = false, loggerConfig: LoggerConfig = LoggerConfig()): RedisClient {
             return RedisClientImpl(host, port, username, password, isSecure, loggerConfig)
         }
 
+        /**
+         * Creates a new [RedisClient] and connects to the redis server
+         * @param host The hostname of the server
+         * @param port The port of the server
+         * @param username The username to authenticate with (optional)
+         * @param password The password to authenticate with
+         * @param isSecure Whether the connection should be secure or not. Only on jvm, mingwx64 and js
+         * @param loggerConfig Optional custom logger configuration
+         */
         suspend fun createAndConnect(host: String, port: Int, password: String, username: String? = null, isSecure: Boolean = false, loggerConfig: LoggerConfig = LoggerConfig()): RedisClient {
             return RedisClientImpl(host, port, username, password, isSecure, loggerConfig).apply {
                 connect()
@@ -74,17 +122,9 @@ internal class RedisClientImpl(override val host: String, private val port: Int,
         LOGGER.output = loggerConfig.output
     }
 
-    /**
-     * Whether the client is connected to the server
-     */
     override val isConnected: Boolean
         get() = ::rawClient.isInitialized && rawClient.connected
 
-    /**
-     * Connects to the redis server
-     *
-     * @param auth Whether it should authenticate with the server after connecting. You can do that later with [authenticate]
-     */
     override suspend fun connect(auth: Boolean) {
         LOGGER.log(true, Logger.Level.INFO) {
             "Connecting to $host:$port"
@@ -100,19 +140,12 @@ internal class RedisClientImpl(override val host: String, private val port: Int,
         if(auth) authenticate()
     }
 
-    /**
-     * Disconnects from the redis server
-     */
     override suspend fun disconnect() {
         sendCommand("QUIT")
         receive()
         rawClient.close()
     }
-    /**
-     * Authenticate to the server.
-     *
-     * @throws RedisException if authentication fails.
-     */
+
     override suspend fun authenticate() {
         LOGGER.log(true, Logger.Level.INFO) {
             "Authenticating..."
