@@ -1,15 +1,22 @@
 package io.github.jan.rediskm.core.entities.collection
 
 import com.soywiz.kds.fastCastTo
+import com.soywiz.korio.dynamic.KDynamic.Companion.toDouble
+import com.soywiz.korio.dynamic.KDynamic.Companion.toDoubleOrNull
 import io.github.jan.rediskm.core.RedisClient
 import io.github.jan.rediskm.core.entities.RedisElement
 import io.github.jan.rediskm.core.entities.RedisListValue
 import io.github.jan.rediskm.core.entities.RedisObject
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.decodeFromJsonElement
+import kotlinx.serialization.json.encodeToJsonElement
+import kotlinx.serialization.json.jsonPrimitive
 import kotlin.jvm.JvmName
 
-class RedisMap internal constructor(override val redisClient: RedisClient, override val key: String) : RedisObject<Map<String, String>>, RedisElement {
+class RedisHash internal constructor(override val redisClient: RedisClient, override val key: String) : RedisObject<Map<String, String>>, RedisElement {
 
     override suspend fun get(): Map<String, String> {
         redisClient.sendCommand("HGETALL", key)
@@ -104,7 +111,7 @@ class RedisMap internal constructor(override val redisClient: RedisClient, overr
      * Adds all key/value pairs from [map] to the map
      */
     suspend fun add(map: Map<String, String> = mapOf()) {
-        redisClient.sendCommand("HMSET", map.flatMap { listOf(it.key, it.value) })
+        redisClient.sendCommand("HSET", key, *map.flatMap { listOf(it.key, it.value) }.toTypedArray())
         redisClient.receive()
     }
 
@@ -129,9 +136,17 @@ class RedisMap internal constructor(override val redisClient: RedisClient, overr
 }
 
 /**
- * Returns a [RedisMap] for the specified [key]. This doesn't make a call to the redis server until you call any function on this object.
+ * Returns a [RedisHash] for the specified [key]. This doesn't make a call to the redis server until you call any function on this object.
  */
-fun RedisClient.getHash(key: String) = RedisMap(this, key)
+fun RedisClient.getHash(key: String) = RedisHash(this, key)
+
+suspend inline fun <reified T> RedisClient.getHash(key: String): T {
+    val map = getMap(key).map { (key, value) ->
+        val primitive = if(value.toDoubleOrNull() != null && value.contains(".")) JsonPrimitive(value.toDouble()) else if(value.toLongOrNull() != null) JsonPrimitive(value.toLong()) else JsonPrimitive(value)
+        key to primitive
+    }.toMap()
+    return Json.decodeFromJsonElement(JsonObject(map))
+}
 
 /**
  * Returns a map/hash for the specified [key]
@@ -142,16 +157,26 @@ suspend fun RedisClient.getMap(key: String) = getHash(key).get()
  * Creates a new map/hash for the specified [key]
  *
  * **Note**: If the map already exists, the values will be added to the end of the set
- * @return A [RedisMap] for the given [key]
+ * @return A [RedisHash] for the given [key]
  */
-suspend fun RedisClient.putHash(key: String, map: Map<String, String> = mapOf()) = RedisMap(this, key).apply {
+suspend fun RedisClient.putHash(key: String, map: Map<String, String> = mapOf()) = RedisHash(this, key).apply {
     if(map.isNotEmpty()) add(map)
+}
+
+suspend inline fun <reified T> RedisClient.putHash(key: String, value: T): RedisHash {
+    val json = Json.encodeToJsonElement(value)
+    if(json !is JsonObject) throw IllegalArgumentException("${value!!::class.simpleName} must not be a json array")
+    if (json.any { it.value !is JsonPrimitive }) {
+        throw IllegalArgumentException("${value!!::class.simpleName} must not contain nested objects")
+    }
+    val map = json.map { it.key to it.value.jsonPrimitive.content }.toMap()
+    return putHash(key, map)
 }
 
 /**
  * Creates a new map/hash for the specified [key]
  *
  * **Note**: If the map already exists, the values will be added to the end of the set
- * @return A [RedisMap] for the given [key]
+ * @return A [RedisHash] for the given [key]
  */
 suspend fun RedisClient.putHash(key: String, builder: MutableMap<String, String>.() -> Unit) = putHash(key, buildMap(builder))
