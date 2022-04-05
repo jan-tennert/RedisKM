@@ -21,7 +21,8 @@ Available for:
 - macosX64
 - macosArm64
 
-**secure connections are only supported on mingx64, JVM and JS**
+~~**secure connections are only supported on mingx64, JVM and JS**~~
+Now available for macos and linux
 
 # Introduction
 

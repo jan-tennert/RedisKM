@@ -9,12 +9,12 @@
  */
 object Versions {
 
-    const val KOTLIN = "1.6.10"
+    const val KOTLIN = "1.6.20"
     const val SERIALIZATION = "1.3.2"
-    const val KORLIBS = "2.6.3"
-    const val COROUTINES = "1.6.0"
+    const val KORLIBS = "2.7.0"
+    const val COROUTINES = "1.6.1"
     const val DOKKA = "1.6.10"
     const val NEXUS_STAGING = "0.30.0"
-    const val REDISKM = "0.3.2"
+    const val REDISKM = "0.3.3"
 
 }
