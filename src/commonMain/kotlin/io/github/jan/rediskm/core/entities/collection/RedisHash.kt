@@ -1,8 +1,6 @@
 package io.github.jan.rediskm.core.entities.collection
 
 import com.soywiz.kds.fastCastTo
-import com.soywiz.korio.dynamic.KDynamic.Companion.toDouble
-import com.soywiz.korio.dynamic.KDynamic.Companion.toDoubleOrNull
 import io.github.jan.rediskm.core.RedisClient
 import io.github.jan.rediskm.core.entities.RedisElement
 import io.github.jan.rediskm.core.entities.RedisListValue
