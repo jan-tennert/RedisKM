@@ -58,10 +58,15 @@ sealed interface RedisClient {
      */
     suspend fun receive(): RedisValue<*>?
 
+    suspend fun sendAndReceive(command: String, vararg args: Any): RedisValue<*>? {
+        sendCommand(command, *args)
+        return receive()
+    }
+
     /**
      * Sends a command to the server, if the built-in ones don't have your desired command.
      */
-    suspend fun sendCommand(vararg args: Any)
+    suspend fun sendCommand(command: String, vararg args: Any)
 
     /**
      * Creates a new [RedisTransaction], which queues up commands to be sent to the server.
@@ -89,6 +94,29 @@ sealed interface RedisClient {
         }
 
         /**
+         * Creates a new [RedisClient]
+         * @param url The connection url looking like this: host:port
+         * @param username The username to authenticate with (optional)
+         * @param password The password to authenticate with
+         * @param isSecure Whether the connection should be secure or not. Only on jvm, mingwx64 and js
+         * @param loggerConfig Optional custom logger configuration
+         */
+        fun create(url: String, password: String, username: String? = null, isSecure: Boolean = false, loggerConfig: LoggerConfig = LoggerConfig()): RedisClient {
+            val hostUrl = url.split(":")
+
+            if(hostUrl.size != 2) throw IllegalArgumentException("Invalid host url: $url")
+
+            val host = hostUrl[0]
+            val port = hostUrl[1].toIntOrNull() ?: throw IllegalArgumentException("Invalid port: ${hostUrl[1]}")
+            return RedisClientImpl(host, port, username, password, isSecure, loggerConfig)
+        }
+
+        /**
+         * Creates a new [RedisClient] with a [builder]
+         */
+        fun create(builder: RedisClientBuilder.() -> Unit) = RedisClientBuilder().apply(builder).build()
+
+        /**
          * Creates a new [RedisClient] and connects to the redis server
          * @param host The hostname of the server
          * @param port The port of the server
@@ -98,12 +126,55 @@ sealed interface RedisClient {
          * @param loggerConfig Optional custom logger configuration
          */
         suspend fun createAndConnect(host: String, port: Int, password: String, username: String? = null, isSecure: Boolean = false, loggerConfig: LoggerConfig = LoggerConfig()): RedisClient {
-            return RedisClientImpl(host, port, username, password, isSecure, loggerConfig).apply {
+            return create(host, port, password, username, isSecure, loggerConfig).apply {
                 connect()
             }
         }
 
+        /**
+         * Creates a new [RedisClient] and connects to the redis server
+         * @param url The connection url looking like this: host:port
+         * @param username The username to authenticate with (optional)
+         * @param password The password to authenticate with
+         * @param isSecure Whether the connection should be secure or not. Only on jvm, mingwx64 and js
+         * @param loggerConfig Optional custom logger configuration
+         */
+        suspend fun createAndConnect(url: String, password: String, username: String? = null, isSecure: Boolean = false, loggerConfig: LoggerConfig = LoggerConfig()): RedisClient {
+            return create(url, password, username, isSecure, loggerConfig).apply {
+                connect()
+            }
+        }
+
+        /**
+         * Creates a new [RedisClient] with a [builder] and connects to the redis server
+         */
+        suspend inline fun createAndConnect(builder: RedisClientBuilder.() -> Unit) = RedisClientBuilder().apply(builder).build().apply {
+            connect()
+        }
+
     }
+
+}
+
+class RedisClientBuilder {
+
+    var host = "localhost"
+    var port = 6379
+    var username: String? = null
+    var password: String = ""
+    var isSecure = false
+    var loggerConfig = LoggerConfig
+
+    fun fromUrl(url: String) {
+        val hostUrl = url.split(":")
+
+        if(hostUrl.size != 2) throw IllegalArgumentException("Invalid host url: $url")
+
+        host = hostUrl[0]
+        port = hostUrl[1].toIntOrNull() ?: throw IllegalArgumentException("Invalid port: ${hostUrl[1]}")
+    }
+
+    fun build(): RedisClient = RedisClientImpl(host, port, username, password, isSecure, loggerConfig)
 
 }
 
@@ -114,7 +185,7 @@ internal class RedisClientImpl(override val host: String, private val port: Int,
     override val modules = mutableMapOf<String, RedisModule>()
     private val mutex = Mutex()
     override val pipeline: RedisPipeline = RedisPipelineImpl(this)
-    val LOGGER = Logger("RedisClient")
+    private val LOGGER = Logger("RedisClient")
     var locked = false
 
     init {
@@ -151,8 +222,7 @@ internal class RedisClientImpl(override val host: String, private val port: Int,
             "Authenticating..."
         }
         val args = if(username != null) arrayOf(username, password) else arrayOf(password)
-        val params = listOf("AUTH", *args).toTypedArray()
-        sendCommand(*params)
+        sendCommand("AUTH", *args)
         receive()
         LOGGER.log(true, Logger.Level.INFO) {
             "Successfully authenticated!"
@@ -176,7 +246,7 @@ internal class RedisClientImpl(override val host: String, private val port: Int,
         }
     }
 
-    override suspend fun sendCommand(vararg args: Any) {
+    override suspend fun sendCommand(command: String, vararg args: Any) {
         LOGGER.debug {
             "Sending command (args): ${args.joinToString(" ")}"
         }

@@ -15,4 +15,8 @@ sealed interface RedisCollection <T> : RedisElement, RedisObject<T> {
      */
     suspend fun contains(element: String): Boolean
 
+    suspend fun add(vararg elements: String): Long
+
+    suspend fun remove(element: String): Long
+
 }

@@ -26,15 +26,6 @@ object LoggerOutput : Logger.Output {
 
 }
 
-class LoggerConfig(var level: Logger.Level = Logger.Level.INFO, var output: Logger.Output = LoggerOutput) {
-
-    operator fun invoke(builder: LoggerConfig.() -> Unit) {
-        val config = LoggerConfig().apply(builder)
-        this.level = config.level
-        this.output = config.output
-    }
-
-}
 
 object ConsoleColors {
 

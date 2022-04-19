@@ -7,7 +7,6 @@ import io.github.jan.rediskm.core.entities.RedisIntegerValue
 import io.github.jan.rediskm.core.entities.RedisListValue
 import io.github.jan.rediskm.core.entities.RedisStringValue
 import io.github.jan.rediskm.core.entities.RedisValue
-
 suspend fun AsyncClient.readResponse(): RedisValue<*>? = when(val char = read().toChar()) {
     Constants.CHAR_PLUS -> {
         val value = readSimpleString()

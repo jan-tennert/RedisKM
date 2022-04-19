@@ -119,6 +119,8 @@ class RedisList internal constructor(override val redisClient: RedisClient, over
         return redisClient.receive()!!.value as Long
     }
 
+    override suspend fun remove(element: String) = remove(element, 1)
+
     /**
      * Replaces the element at [index] with [newValue]
      */
@@ -141,8 +143,8 @@ class RedisList internal constructor(override val redisClient: RedisClient, over
      * Adds multiple elements on the right side of the list
      * @return The length of the list after the operation
      */
-    suspend fun add(vararg values: String): Long {
-        redisClient.sendCommand("RPUSH", key, *values)
+    override suspend fun add(vararg elements: String): Long {
+        redisClient.sendCommand("RPUSH", key, *elements)
         return redisClient.receive()!!.value as Long
     }
 

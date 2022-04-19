@@ -5,5 +5,4 @@
 /buildSrc/.gradle/
 /buildSrc/build/
 src/jvmMain/kotlin/test.kt
-kotlin-js-store/
 .idea/

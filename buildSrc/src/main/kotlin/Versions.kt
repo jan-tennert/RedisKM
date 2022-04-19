@@ -15,6 +15,6 @@ object Versions {
     const val COROUTINES = "1.6.1"
     const val DOKKA = "1.6.10"
     const val NEXUS_STAGING = "0.30.0"
-    const val REDISKM = "0.3.3"
+    const val REDISKM = "0.3.4"
 
 }

@@ -23,7 +23,14 @@ interface RedisElement {
 
 }
 
-class RedisElementImpl internal constructor(override val key: String, override val redisClient: RedisClient): RedisElement
+class RedisElementImpl internal constructor(override val key: String, override val redisClient: RedisClient): RedisElement {
+
+    override fun hashCode() = key.hashCode()
+    override fun equals(other: Any?) = other is RedisElement && other.key == key
+    override fun toString() = "RedisElement(key=$key)"
+
+
+}
 
 suspend inline fun <reified T> RedisElement.get(): T? = redisClient.get(key)
 

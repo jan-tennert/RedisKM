@@ -15,7 +15,7 @@ class RedisSet internal constructor(override val redisClient: RedisClient, overr
      * Adds multiple values to the set.
      * @return the number of elements that were added to the set.
      */
-    suspend fun add(vararg elements: String): Long {
+    override suspend fun add(vararg elements: String): Long {
         redisClient.sendCommand("SADD", key, *elements)
         return redisClient.receive()!!.value as Long
     }
@@ -82,6 +82,8 @@ class RedisSet internal constructor(override val redisClient: RedisClient, overr
         redisClient.sendCommand("SREM", key, *elements)
         return redisClient.receive()!!.value as Long
     }
+
+    override suspend fun remove(element: String) = remove(elements = arrayOf(element))
 
     /**
      * Merges this set with [otherSets] and returns the result in a new set.

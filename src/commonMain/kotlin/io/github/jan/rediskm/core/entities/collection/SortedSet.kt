@@ -3,18 +3,20 @@ package io.github.jan.rediskm.core.entities.collection
 import com.soywiz.kds.fastCastTo
 import io.github.jan.rediskm.core.RedisClient
 import io.github.jan.rediskm.core.RedisException
+import io.github.jan.rediskm.core.entities.RedisElement
 import io.github.jan.rediskm.core.entities.RedisListValue
+import io.github.jan.rediskm.core.entities.RedisObject
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializerOrNull
 import kotlin.reflect.typeOf
 
-class RedisSortedSet internal constructor(override val redisClient: RedisClient, override val key: String) : RedisCollection<List<String>> {
+class RedisSortedSet internal constructor(override val redisClient: RedisClient, override val key: String) : RedisObject<Set<String>>, RedisElement {
 
-    override suspend fun get() = subList(0, -1)
+    override suspend fun get() = subSet(0, -1)
 
-    override suspend fun contains(element: String) = indexOf(element) != -1L
+    suspend fun contains(element: String) = indexOf(element) != -1L
 
-    override suspend fun size(): Long {
+    suspend fun size(): Long {
         redisClient.sendCommand("ZCARD", key)
         return redisClient.receive()!!.value.fastCastTo()
     }
@@ -59,9 +61,9 @@ class RedisSortedSet internal constructor(override val redisClient: RedisClient,
      * **Note**: This operation does not edit the original list. Use [trim] if you want to edit the original list
      * @return The sub list
      */
-    suspend fun subList(start: Long, end: Long): List<String> {
+    suspend fun subSet(start: Long, end: Long): Set<String> {
         redisClient.sendCommand("ZRANGE", key, start, end)
-        return (redisClient.receive() as RedisListValue).mapToStringList()
+        return (redisClient.receive() as RedisListValue).mapToStringList().toSet()
     }
 
     /**
