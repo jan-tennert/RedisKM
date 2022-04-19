@@ -50,7 +50,7 @@ internal class RedisPipelineImpl(private val client: RedisClient) : RedisPipelin
             (client as RedisClientImpl).locked = true
         }
         commands.forEach {
-            client.sendCommand(*it.args.toTypedArray())
+            client.sendCommand(it.args[0], it.args.drop(1).toTypedArray())
         }
     }
 

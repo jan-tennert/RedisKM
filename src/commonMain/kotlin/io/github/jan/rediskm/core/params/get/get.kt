@@ -19,7 +19,7 @@ suspend inline fun <reified T> RedisClient.get(key: String, delete: Boolean = fa
     } else {
         listOf("GET", key)
     }
-    sendCommand(*args.toTypedArray())
+    sendCommand(args[0], args.drop(1).toTypedArray())
     val result = receive() ?: return null
     return deserialize(result)
 }

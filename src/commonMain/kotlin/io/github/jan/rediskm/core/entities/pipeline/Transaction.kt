@@ -40,7 +40,7 @@ internal class RedisTransactionImpl(private val redisClient: RedisClient, privat
             redisClient.pipeline.sendCommands(commands)
         } else {
             commands.forEach {
-                redisClient.sendCommand(*it.args.toTypedArray())
+                redisClient.sendCommand(it.args[0], it.args.drop(1).toTypedArray())
                 redisClient.receive()
             }
         }
