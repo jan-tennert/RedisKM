@@ -20,6 +20,7 @@ Available for:
 - linuxX64
 - macosX64
 - macosArm64
+- iosX64
 
 ~~**secure connections are only supported on mingx64, JVM and JS**~~
 Now available for macos and linux
