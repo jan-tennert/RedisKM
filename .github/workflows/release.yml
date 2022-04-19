@@ -41,7 +41,7 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
       - name: Publish package
-        run: ./gradlew publishMingwx64PublicationToOssRepository --debug
+        run: ./gradlew publishMingwx64PublicationToOssRepository
 
   publishMacOS:
     runs-on: macos-latest
@@ -57,7 +57,7 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
       - name: Publish package
-        run: ./gradlew publishMacosX64PublicationToOssRepository publishMacosArm64PublicationToOssRepository publishIos64XPublicationToOssRepository
+        run: ./gradlew publishMacosX64PublicationToOssRepository publishMacosArm64PublicationToOssRepository publishIosX64PublicationToOssRepository
 
   closeAndRelease:
     needs: [publishLinuxJVMJS, publishWindows, publishMacOS]
