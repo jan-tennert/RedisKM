@@ -125,6 +125,7 @@ kotlin {
         browser()
         nodejs()
     }
+    mingwX64()
     macosX64()
     linuxX64()
     macosArm64()
