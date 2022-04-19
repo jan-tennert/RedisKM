@@ -125,10 +125,10 @@ kotlin {
         browser()
         nodejs()
     }
-    mingwX64()
-    linuxX64()
     macosX64()
+    linuxX64()
     macosArm64()
+    iosX64()
     sourceSets {
         all { languageSettings { optIn("kotlin.RequiresOptIn") } }
         val commonMain by getting {
